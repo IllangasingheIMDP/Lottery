@@ -30,11 +30,7 @@ try {
 
 // 4) Create the pool (named `db`)
 const db = mysql.createPool({
-  host:               DB_HOST,
-  port:               Number(DB_PORT),
-  user:               DB_USER,
-  password:           DB_PASSWORD,
-  database:           DB_NAME,
+  uri: process.env.DB_URL,
   waitForConnections: true,
   connectionLimit:    10,
   queueLimit:         0,
