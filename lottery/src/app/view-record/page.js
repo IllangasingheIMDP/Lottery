@@ -57,7 +57,7 @@ export default function ViewRecord({searchParams}) {
       <Suspense fallback={<div>Loading...</div>}>
       <div className="max-w-4xl mx-auto mt-16 px-4">
         <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow">
-          <p className="text-red-700">Record not found. Please check the shop ID and date.</p>
+          <p className="text-red-700">වාර්තාව හමු නොවීය. කරුණාකර සාප්පු හැඳුනුම්පත සහ දිනය පරීක්ෂා කරන්න.</p>
           <button
             onClick={() => router.push('/lottery-records')}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
@@ -121,7 +121,7 @@ export default function ViewRecord({searchParams}) {
               {record.completed ? 'Completed' : 'Pending'}
             </span>
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${record.equality_check ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-              {record.equality_check ? 'Balanced' : 'Unbalanced'}
+              {record.equality_check ? 'සමතුලිතයි' : 'සමතුලිත නොවේ'}
             </span>
             <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
               Step {record.step}/6
@@ -140,19 +140,19 @@ export default function ViewRecord({searchParams}) {
           <div className="p-4">
             <div className="space-y-3">
               <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                <span className="text-gray-600">Price per Lottery:</span>
+                <span className="text-gray-600">ලොතරැයි ටිකට් එකක මිල:</span>
                 <span className="font-medium">{formatCurrency(record.price_per_lottery)}</span>
               </div>
               <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                <span className="text-gray-600">Lottery Quantity:</span>
+                <span className="text-gray-600">ලොතරැයි ප්රමාණය:</span>
                 <span className="font-medium">{record.lottery_quantity}</span>
               </div>
               <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                <span className="text-gray-600">Total Worth:</span>
+                <span className="text-gray-600">දී ඇති ටිකට්වල මුළු වටිනාකම:</span>
                 <span className="font-medium text-green-600">{formatCurrency(record.total_worth)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Special Notes:</span>
+                <span className="text-gray-600">විශේෂ සටහන්:</span>
                 <span className="font-medium italic">{record.special_lotteries_note || "None"}</span>
               </div>
             </div>
@@ -167,19 +167,19 @@ export default function ViewRecord({searchParams}) {
           <div className="p-4">
             <div className="space-y-3">
               <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                <span className="text-gray-600">Cash Given:</span>
+                <span className="text-gray-600">මුදලින් ලැබුණු මුදල:</span>
                 <span className="font-medium">{formatCurrency(record.cash_given)}</span>
               </div>
               <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                <span className="text-gray-600">Tickets Total Price:</span>
+                <span className="text-gray-600">ටිකට්පත් මගින් ලැබුණු මුදල:</span>
                 <span className="font-medium">{formatCurrency(record.got_tickets_total_price)}</span>
               </div>
               <div className="flex justify-between items-center border-b border-gray-100 pb-2">
-                <span className="text-gray-600">NLB Total:</span>
+                <span className="text-gray-600">මුළු NLB මිල:</span>
                 <span className="font-medium">{formatCurrency(record.nlb_total_price)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">DLB Total:</span>
+                <span className="text-gray-600">මුළු DLB මිල:</span>
                 <span className="font-medium">{formatCurrency(record.dlb_total_price)}</span>
               </div>
             </div>
@@ -189,7 +189,7 @@ export default function ViewRecord({searchParams}) {
         {/* Card 3: NLB Lottery Breakdown */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="border-b border-gray-200 px-4 py-3">
-            <h2 className="text-lg font-semibold text-gray-800">NLB Lottery Breakdown</h2>
+            <h2 className="text-lg font-semibold text-gray-800">NLB විශ්ලේෂණය</h2>
           </div>
           <div className="p-4">
             {Object.keys(record.nlb).length > 0 ? (
@@ -206,7 +206,7 @@ export default function ViewRecord({searchParams}) {
                 </div>
               </div>
             ) : (
-              <p className="text-gray-500 italic">No NLB lottery tickets recorded</p>
+              <p className="text-gray-500 italic">NLB ලොතරැයි ටිකට්පත් කිසිවක් ලියාපදිංචි කර නොමැත.</p>
             )}
           </div>
         </div>
@@ -214,7 +214,7 @@ export default function ViewRecord({searchParams}) {
         {/* Card 4: DLB Lottery Breakdown */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="border-b border-gray-200 px-4 py-3">
-            <h2 className="text-lg font-semibold text-gray-800">DLB Lottery Breakdown</h2>
+            <h2 className="text-lg font-semibold text-gray-800">DLB විශ්ලේෂණය</h2>
           </div>
           <div className="p-4">
             {Object.keys(record.dlb).some(key => record.dlb[key] > 0) ? (
@@ -231,7 +231,7 @@ export default function ViewRecord({searchParams}) {
                 </div>
               </div>
             ) : (
-              <p className="text-gray-500 italic">No DLB lottery tickets recorded</p>
+              <p className="text-gray-500 italic">DLB ලොතරැයි ටිකට්පත් කිසිවක් ලියාපදිංචි කර නොමැත.</p>
             )}
           </div>
         </div>
@@ -239,7 +239,7 @@ export default function ViewRecord({searchParams}) {
         {/* Card 5: Faulty Tickets */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden md:col-span-2">
           <div className="border-b border-gray-200 px-4 py-3">
-            <h2 className="text-lg font-semibold text-gray-800">Faulty Tickets</h2>
+            <h2 className="text-lg font-semibold text-gray-800">දෝෂ සහිත ටිකට්පත්</h2>
           </div>
           <div className="p-4">
             {Object.keys(record.faulty).some(key => record.faulty[key] > 0) ? (
@@ -251,12 +251,12 @@ export default function ViewRecord({searchParams}) {
                   </div>
                 ))}
                 <div className="bg-red-50 p-3 rounded sm:col-span-2 md:col-span-3">
-                  <div className="font-semibold text-red-700">Total Faulty Value:</div>
+                  <div className="font-semibold text-red-700">සම්පූර්ණ දෝෂ සහිත අගය:</div>
                   <div className="font-medium">{formatCurrency(record.faulty_total_price)}</div>
                 </div>
               </div>
             ) : (
-              <p className="text-gray-500 italic">No faulty tickets recorded</p>
+              <p className="text-gray-500 italic">දෝෂ සහිත ටිකට්පත් වාර්තා කර නොමැත</p>
             )}
           </div>
         </div>

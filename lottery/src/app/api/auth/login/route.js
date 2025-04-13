@@ -14,11 +14,11 @@ export async function POST(req) {
     if (!match) {
       return new Response(JSON.stringify({ error: 'Invalid credentials' }), { status: 401 });
     }
-    const token = jwt.sign({ gmail: user.gmail }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ gmail: user.gmail }, process.env.JWT_SECRET, { expiresIn: '7d' });
     const response = new Response(JSON.stringify({ message: 'Login successful' }), { status: 200 });
     response.headers.set(
       'Set-Cookie',
-      `token=${token}; HttpOnly; Path=/; Max-Age=3600; SameSite=Strict; ${process.env.NODE_ENV === 'production' ? 'Secure' : ''}`
+      `token=${token}; HttpOnly; Path=/; Max-Age=604800; SameSite=Strict; ${process.env.NODE_ENV === 'production' ? 'Secure' : ''}`
     );
     return response;
   } catch (error) {
