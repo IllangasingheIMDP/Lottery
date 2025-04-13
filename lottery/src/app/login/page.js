@@ -15,7 +15,7 @@ export default function Login() {
       body: JSON.stringify({ gmail, password }),
     });
     if (res.ok) {
-      router.push('/lottery-records');
+      router.push('/');
     } else {
       alert('Login failed');
     }
