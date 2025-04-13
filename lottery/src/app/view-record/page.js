@@ -151,6 +151,10 @@ export default function ViewRecord({searchParams}) {
                 <span className="text-gray-600">දී ඇති ටිකට්වල මුළු වටිනාකම:</span>
                 <span className="font-medium text-green-600">{formatCurrency(record.total_worth)}</span>
               </div>
+              <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                <span className="text-gray-600">මුළු මුදල ගැලපීම:</span>
+                {Number(record.total_worth) == (Number(record.got_tickets_total_price) + Number(record.cash_given)+Number(record.faulty_total_price)) ? <span className="font-medium text-blue-600">{record.total_worth} = {record.cash_given} + {record.got_tickets_total_price} + {record.faulty_total_price}</span> : <span className="font-medium text-red-600"> {record.total_worth} ≠ {record.cash_given} + {record.got_tickets_total_price} + {record.faulty_total_price} </span>}
+              </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">විශේෂ සටහන්:</span>
                 <span className="font-medium italic">{record.special_lotteries_note || "None"}</span>
@@ -181,6 +185,14 @@ export default function ViewRecord({searchParams}) {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">මුළු DLB මිල:</span>
                 <span className="font-medium">{formatCurrency(record.dlb_total_price)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">ගැලපීම:</span>
+                <span className="font-medium text-orange-600">{record.equality_check ? "ටිකට් මුදල් ගැලපේ":"ටිකට් පත නොගැලපේ."}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">මුළු ලැබුණු මිල:</span>
+                <span className="font-medium text-purple-600">{formatCurrency(Number(record.got_tickets_total_price) + Number(record.cash_given))}</span>
               </div>
             </div>
           </div>
