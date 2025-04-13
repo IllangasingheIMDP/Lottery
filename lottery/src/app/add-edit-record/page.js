@@ -211,11 +211,11 @@ function Step6({ initialData, onSubmit, loading }) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">Special Lotteries Note</h2>
+      <h2 className="text-lg font-medium text-gray-900">විශේෂ ලොතරැයි සටහන</h2>
       
       <div>
         <label htmlFor="specialNote" className="block text-sm font-medium text-gray-700">
-          Add any special notes about the lotteries
+        ලොතරැයි පිළිබඳ විශේෂ සටහන් එකතු කරන්න.
         </label>
         <div className="mt-1">
           <textarea
@@ -228,7 +228,7 @@ function Step6({ initialData, onSubmit, loading }) {
           />
         </div>
         <p className="mt-2 text-sm text-gray-500">
-          Add any important information about special lotteries or other relevant details.
+        විශේෂ ලොතරැයි පිළිබඳ වැදගත් තොරතුරු හෝ වෙනත් අදාළ විස්තර එක් කරන්න.
         </p>
       </div>
       
@@ -277,7 +277,7 @@ function Step1({ initialData, onSubmit, loading }) {
       <div className="space-y-4">
         <div>
           <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-            Price per lottery ticket
+          ලොතරැයි ටිකට් එකක මිල
           </label>
           <div className="mt-1 relative rounded-md shadow-sm">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -299,7 +299,7 @@ function Step1({ initialData, onSubmit, loading }) {
         
         <div>
           <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">
-            Lottery quantity
+          ලොතරැයි ප්රමාණය
           </label>
           <input
             id="quantity"
@@ -316,7 +316,7 @@ function Step1({ initialData, onSubmit, loading }) {
       
       <div className="bg-gray-50 p-4 rounded-md">
         <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-gray-500">Total Worth:</span>
+          <span className="text-sm font-medium text-gray-500">දී ඇති ටිකට්වල මුළු වටිනාකම:</span>
           <span className="text-lg font-bold text-indigo-600">${totalWorth}</span>
         </div>
       </div>
@@ -357,12 +357,12 @@ function Step2({ initialData, onSubmit, loading }) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
     <form onSubmit={handleSubmit} className="space-y-6">
-      <h2 className="text-lg font-medium text-gray-900">Cash and Tickets</h2>
+      <h2 className="text-lg font-medium text-gray-900">මුදල් සහ ටිකට්පත්</h2>
       
       <div className="space-y-4">
         <div>
           <label htmlFor="cash" className="block text-sm font-medium text-gray-700">
-            Cash given
+          මුදලින් ලැබුණු මුදල
           </label>
           <div className="mt-1 relative rounded-md shadow-sm">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -384,7 +384,7 @@ function Step2({ initialData, onSubmit, loading }) {
         
         <div>
           <label htmlFor="totalPrice" className="block text-sm font-medium text-gray-700">
-            Total price of tickets
+          ටිකට්පත් මගින් ලැබුණු මුදල
           </label>
           <div className="mt-1 relative rounded-md shadow-sm">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -464,7 +464,7 @@ function Step3({ initialData, onSubmit, loading }) {
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-5">
               <label htmlFor="newPrice" className="block text-sm font-medium text-gray-700">
-                Price
+              මුදල්
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -485,7 +485,7 @@ function Step3({ initialData, onSubmit, loading }) {
             
             <div className="col-span-4">
               <label htmlFor="newCount" className="block text-sm font-medium text-gray-700">
-                Count
+              ටිකට් ගණන
               </label>
               <input
                 id="newCount"
@@ -517,13 +517,13 @@ function Step3({ initialData, onSubmit, loading }) {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price
+                      මුදල
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Count
+                      ටිකට් ගණන
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total
+                      මුළු මුදල
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Action
@@ -558,13 +558,13 @@ function Step3({ initialData, onSubmit, loading }) {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-500 italic">No NLB tickets added yet.</p>
+            <p className="text-sm text-gray-500 italic">තවම NLB ටිකට්පත් එකතු කර නැත.</p>
           )}
         </div>
         
         <div className="bg-gray-50 p-4 rounded-md">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-500">Total NLB Price:</span>
+            <span className="text-sm font-medium text-gray-500">මුළු NLB මිල:</span>
             <span className="text-lg font-bold text-indigo-600">${totalNlbPrice}</span>
           </div>
         </div>
@@ -629,7 +629,7 @@ function Step4({ initialData, onSubmit, loading }) {
         <div className="grid grid-cols-12 gap-4">
           <div className="col-span-5">
             <label htmlFor="newPrice" className="block text-sm font-medium text-gray-700">
-              Price
+            මුදල
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -650,7 +650,7 @@ function Step4({ initialData, onSubmit, loading }) {
           
           <div className="col-span-4">
             <label htmlFor="newCount" className="block text-sm font-medium text-gray-700">
-              Count
+            ටිකට් ගණන
             </label>
             <input
               id="newCount"
@@ -682,13 +682,13 @@ function Step4({ initialData, onSubmit, loading }) {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Price
+                    මුදල
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Count
+                    ටිකට් ගණන
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Total
+                    මුළු මුදල
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Action
@@ -723,13 +723,13 @@ function Step4({ initialData, onSubmit, loading }) {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-500 italic">No DLB tickets added yet.</p>
+          <p className="text-sm text-gray-500 italic">තවම DLB ටිකට්පත් එකතු කර නැත.</p>
         )}
       </div>
       
       <div className="bg-gray-50 p-4 rounded-md">
         <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-gray-500">Total DLB Price:</span>
+          <span className="text-sm font-medium text-gray-500">මුළු DLB මිල:</span>
           <span className="text-lg font-bold text-indigo-600">${totalDlbPrice}</span>
         </div>
       </div>
@@ -786,13 +786,13 @@ function Step5({ initialData, onSubmit, loading }) {
     return (
       <Suspense fallback={<div>Loading...</div>}>
       <form onSubmit={handleSubmit} className="space-y-6">
-        <h2 className="text-lg font-medium text-gray-900">Faulty Tickets</h2>
+        <h2 className="text-lg font-medium text-gray-900">දෝෂ සහිත ප්රවේශපත්</h2>
         
         <div className="space-y-4">
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-5">
               <label htmlFor="newPrice" className="block text-sm font-medium text-gray-700">
-                Price
+              මුදල
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -813,7 +813,7 @@ function Step5({ initialData, onSubmit, loading }) {
             
             <div className="col-span-4">
               <label htmlFor="newCount" className="block text-sm font-medium text-gray-700">
-                Count
+              ටිකට් ගණන
               </label>
               <input
                 id="newCount"
@@ -845,13 +845,13 @@ function Step5({ initialData, onSubmit, loading }) {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price
+                     මුදල
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Count
+                      ටිකට් ගණන
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Total
+                      මුළු මිල
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Action
@@ -886,13 +886,13 @@ function Step5({ initialData, onSubmit, loading }) {
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-500 italic">No faulty tickets added yet.</p>
+            <p className="text-sm text-gray-500 italic">තවමත් දෝෂ සහිත ටිකට්පත් එකතු කර නොමැත.</p>
           )}
         </div>
         
         <div className="bg-gray-50 p-4 rounded-md">
           <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-500">Total Faulty Tickets Value:</span>
+            <span className="text-sm font-medium text-gray-500">දෝෂ සහිත ටිකට්පත්වල මුළු වටිනාකම:</span>
             <span className="text-lg font-bold text-indigo-600">${totalFaultyPrice}</span>
           </div>
         </div>
