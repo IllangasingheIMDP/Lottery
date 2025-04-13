@@ -70,7 +70,7 @@ export default function AddEditRecord({searchParams}) {
       
       setData({ ...data, ...stepData });
       if (step < 6) setStep(step + 1);
-      else router.push('/lottery-records');
+      else router.push('/lottery-records?date='+ date);
     } catch (err) {
       setError(err.message);
     } finally {

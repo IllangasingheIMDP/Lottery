@@ -2,11 +2,26 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/navbar';
-export default function LotteryRecords() {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+ function LotteryRecordsContent() {
+  // const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const searchParams = useSearchParams();
+  const [date, setDate] = useState(() => {
+    // Initialize with URL param or today's date
+    const urlDate = searchParams.get('date');
+    return urlDate || new Date().toISOString().split('T')[0];
+  });
   const [shops, setShops] = useState([]);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
+  const dateReceived = searchParams.date;
+  useEffect(() => {
+    if (dateReceived) {
+      console.log(dateReceived);
+      setDate(dateReceived);
+    }
+  },[dateReceived]);
   const [summaries, setSummaries] = useState({
     totalWorth: 0,
     totalCashGiven: 0,
@@ -113,7 +128,9 @@ export default function LotteryRecords() {
   };
 
   return (
+    
     <div>
+
       <Header/>
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Lottery Records</h1>
@@ -294,5 +311,13 @@ export default function LotteryRecords() {
       )}
     </div>
   </div>
+
+  );
+}
+export default function LotteryRecords() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LotteryRecordsContent />
+    </Suspense>
   );
 }
