@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/navbar';
 import { Suspense } from 'react';
-export default function AddEditRecord({searchParams}) {
+function AddEditRecordContent() {
   const [step, setStep] = useState(1);
   const [recordId, setRecordId] = useState(null);
   const [data, setData] = useState({});
@@ -11,18 +11,22 @@ export default function AddEditRecord({searchParams}) {
   const [error, setError] = useState('');
   const router = useRouter();
   //const searchParams = useSearchParams();
-  const shopId = searchParams.shopId;
-  const date = searchParams.date;
+  const searchParams = useSearchParams();
+  
+  const shopId = searchParams.get('shopId');
+  const date = searchParams.get('date');
 
   useEffect(() => {
     if (shopId && date) {
       setLoading(true);
+      
       fetch(`/api/daily_records?shop_id=${shopId}&date=${date}`)
         .then((res) => res.json())
         .then((record) => {
           setRecordId(record.id);
-          console.log(record);
+          
           setData(record);
+          
           setLoading(false);
         })
         .catch((err) => {
@@ -31,6 +35,7 @@ export default function AddEditRecord({searchParams}) {
         });
     }
   }, [shopId, date]);
+
 
   const handleSubmit = async (stepData) => {
     setLoading(true);
@@ -81,8 +86,16 @@ export default function AddEditRecord({searchParams}) {
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
   };
+ 
 
   const renderStep = () => {
+    if (loading) {
+      return (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      );
+    }
     switch (step) {
       case 1:
         return (
@@ -255,6 +268,7 @@ function Step6({ initialData, onSubmit, loading }) {
 
 function Step1({ initialData, onSubmit, loading }) {
   const [price, setPrice] = useState(initialData.price_per_lottery || '');
+  
   const [quantity, setQuantity] = useState(initialData.lottery_quantity || '');
   
   const totalWorth = price && quantity 
@@ -914,6 +928,14 @@ function Step5({ initialData, onSubmit, loading }) {
           </button>
         </div>
       </form>
+      </Suspense>
+    );
+  }
+
+  export default function AddEditRecord() {
+    return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <AddEditRecordContent />
       </Suspense>
     );
   }
