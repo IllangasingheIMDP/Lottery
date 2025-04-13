@@ -2,13 +2,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/navbar';
-export default function ViewRecord() {
+import { Suspense } from 'react';
+export default function ViewRecord({searchParams}) {
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const shopId = searchParams.get('shopId');
-  const date = searchParams.get('date');
+  //const searchParams = useSearchParams();
+  const shopId = searchParams.shopId;
+  const date = searchParams.date;
 
   useEffect(() => {
     if (shopId && date) {
@@ -43,14 +44,17 @@ export default function ViewRecord() {
 
   if (loading) {
     return (
+      <Suspense fallback={<div>Loading...</div>}>
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
       </div>
+      </Suspense>
     );
   }
 
   if (!record) {
     return (
+      <Suspense fallback={<div>Loading...</div>}>
       <div className="max-w-4xl mx-auto mt-16 px-4">
         <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow">
           <p className="text-red-700">Record not found. Please check the shop ID and date.</p>
@@ -62,10 +66,11 @@ export default function ViewRecord() {
           </button>
         </div>
       </div>
+      </Suspense>
     );
   }
 
-  return (
+  return (<Suspense fallback={<div>Loading...</div>}>
     <div className="min-h-screen bg-gray-100">
       <Header />
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -288,5 +293,6 @@ export default function ViewRecord() {
       </div>
     </div>
   </div>
+  </Suspense>
   );
 }

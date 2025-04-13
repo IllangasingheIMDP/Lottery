@@ -2,16 +2,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/navbar';
-export default function AddEditRecord() {
+import { Suspense } from 'react';
+export default function AddEditRecord({searchParams}) {
   const [step, setStep] = useState(1);
   const [recordId, setRecordId] = useState(null);
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const shopId = searchParams.get('shopId');
-  const date = searchParams.get('date');
+  //const searchParams = useSearchParams();
+  const shopId = searchParams.shopId;
+  const date = searchParams.date;
 
   useEffect(() => {
     if (shopId && date) {
@@ -137,7 +138,7 @@ export default function AddEditRecord() {
   };
 
   return (
-    
+    <Suspense fallback={<div>Loading...</div>}>
     <div className="min-h-screen bg-gray-50 py-8">
       <Header/>
       <div className="max-w-3xl mx-auto bg-white shadow-md rounded-lg overflow-hidden">
@@ -195,6 +196,7 @@ export default function AddEditRecord() {
         </div>
       </div>
     </div>
+    </Suspense>
   );
 }
 
@@ -207,6 +209,7 @@ function Step6({ initialData, onSubmit, loading }) {
   };
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="text-lg font-medium text-gray-900">Special Lotteries Note</h2>
       
@@ -246,6 +249,7 @@ function Step6({ initialData, onSubmit, loading }) {
         </button>
       </div>
     </form>
+    </Suspense>
   );
 }
 
@@ -266,6 +270,7 @@ function Step1({ initialData, onSubmit, loading }) {
   };
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="text-lg font-medium text-gray-900">Lottery Details</h2>
       
@@ -333,6 +338,7 @@ function Step1({ initialData, onSubmit, loading }) {
         </button>
       </div>
     </form>
+    </Suspense>
   );
 }
 
@@ -349,6 +355,7 @@ function Step2({ initialData, onSubmit, loading }) {
   };
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="text-lg font-medium text-gray-900">Cash and Tickets</h2>
       
@@ -415,6 +422,7 @@ function Step2({ initialData, onSubmit, loading }) {
         </button>
       </div>
     </form>
+    </Suspense>
   );
 }
 
@@ -448,6 +456,7 @@ function Step3({ initialData, onSubmit, loading }) {
     };
   
     return (
+      <Suspense fallback={<div>Loading...</div>}>
       <form onSubmit={handleSubmit} className="space-y-6">
         <h2 className="text-lg font-medium text-gray-900">NLB Tickets</h2>
         
@@ -577,6 +586,7 @@ function Step3({ initialData, onSubmit, loading }) {
           </button>
         </div>
       </form>
+    </Suspense>
     );
   }
         
@@ -611,6 +621,7 @@ function Step4({ initialData, onSubmit, loading }) {
   };
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <form onSubmit={handleSubmit} className="space-y-6">
       <h2 className="text-lg font-medium text-gray-900">DLB Tickets</h2>
       
@@ -740,6 +751,7 @@ function Step4({ initialData, onSubmit, loading }) {
         </button>
       </div>
     </form>
+  </Suspense>  
   );
 }
 function Step5({ initialData, onSubmit, loading }) {
@@ -772,6 +784,7 @@ function Step5({ initialData, onSubmit, loading }) {
     };
   
     return (
+      <Suspense fallback={<div>Loading...</div>}>
       <form onSubmit={handleSubmit} className="space-y-6">
         <h2 className="text-lg font-medium text-gray-900">Faulty Tickets</h2>
         
@@ -901,5 +914,6 @@ function Step5({ initialData, onSubmit, loading }) {
           </button>
         </div>
       </form>
+      </Suspense>
     );
   }

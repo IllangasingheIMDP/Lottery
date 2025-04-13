@@ -111,7 +111,7 @@ export default function Dashboard() {
                   {getGreeting()}, {user?.username || 'User'}!
                 </h2>
                 <p className="mt-2 text-blue-100">
-                  Welcome to your lottery management dashboard. Here's an overview of your system.
+                  Welcome to your lottery management dashboard. Here&apos;s an overview of your system.
                 </p>
               </div>
               {/* <div className="px-6 py-5 bg-blue-50 border-t border-blue-100">

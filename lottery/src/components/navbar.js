@@ -32,7 +32,7 @@ export default function Header() {
     };
     
     fetchUser();
-  }, []);
+  }, [router]);
 
   const handleLogout = async () => {
     try {
