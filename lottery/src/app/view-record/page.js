@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-
+import Header from '@/components/navbar';
 export default function ViewRecord() {
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -66,13 +66,15 @@ export default function ViewRecord() {
   }
 
   return (
+    <div className="min-h-screen bg-gray-100">
+      <Header />
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       {/* Header Section */}
       <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4">
           <div className="flex justify-between items-center flex-wrap">
             <h1 className="text-2xl font-bold text-white">
-              Shop #{record.shop_id} - Lottery Record
+              {record.name} - Lottery Record
             </h1>
             <span className="inline-block bg-blue-900 rounded-full px-3 py-1 text-sm font-semibold text-white mt-2 sm:mt-0">
               {formatDate(record.date)}
@@ -285,5 +287,6 @@ export default function ViewRecord() {
         </div>
       </div>
     </div>
+  </div>
   );
 }

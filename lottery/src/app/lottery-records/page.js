@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
+import Header from '@/components/navbar';
 export default function LotteryRecords() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [shops, setShops] = useState([]);
@@ -113,6 +113,8 @@ export default function LotteryRecords() {
   };
 
   return (
+    <div>
+      <Header/>
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Lottery Records</h1>
       
@@ -284,5 +286,6 @@ export default function LotteryRecords() {
         </div>
       )}
     </div>
+  </div>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
+import Header from '@/components/navbar';
 export default function ManageShops() {
   const [shops, setShops] = useState([]);
   const [name, setName] = useState('');
@@ -62,6 +62,8 @@ export default function ManageShops() {
   };
 
   return (
+    <div className="min-h-screen bg-gray-100">
+    <Header />
     <div className="max-w-5xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Manage Shops</h1>
@@ -226,6 +228,7 @@ export default function ManageShops() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }

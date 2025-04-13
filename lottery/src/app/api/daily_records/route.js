@@ -20,7 +20,7 @@ export async function GET(req) {
   try {
     conn = await db.getConnection();
     const [rows] = await conn.query(
-      'SELECT * FROM daily_records WHERE shop_id = ? AND date = ?',
+      'SELECT d.*,s.name FROM daily_records as d join shops as s on d.shop_id=s.id  WHERE shop_id = ? AND date = ?',
       [shop_id, date]
     );
     
@@ -104,12 +104,11 @@ export async function POST(req) {
       }
       
       const record = records[0];
-      const nlb_total_price = record.nlb_total_price || 0;
-      const got_tickets_total_price = record.got_tickets_total_price || 0;
+      const nlb_total_price = Number(parseFloat(record.nlb_total_price || '0').toFixed(2));
+      const got_tickets_total_price = Number(parseFloat(record.got_tickets_total_price || '0').toFixed(2));
       
       // Calculate equality check (1 = true, 0 = false)
-      const equality_check = Math.abs((nlb_total_price + dlb_total_price) - got_tickets_total_price) < 0.01 ? 1 : 0;
-      
+      const equality_check =  ((nlb_total_price+dlb_total_price) === got_tickets_total_price) ? 1 : 0;
       await conn.query(
         'UPDATE daily_records SET dlb = ?, dlb_total_price = ?, equality_check = ?, step = 4 WHERE id = ?',
         [dlb, dlb_total_price, equality_check, id]

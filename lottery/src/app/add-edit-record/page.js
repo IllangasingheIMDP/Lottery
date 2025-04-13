@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-
+import Header from '@/components/navbar';
 export default function AddEditRecord() {
   const [step, setStep] = useState(1);
   const [recordId, setRecordId] = useState(null);
@@ -137,7 +137,9 @@ export default function AddEditRecord() {
   };
 
   return (
+    
     <div className="min-h-screen bg-gray-50 py-8">
+      <Header/>
       <div className="max-w-3xl mx-auto bg-white shadow-md rounded-lg overflow-hidden">
         <div className="bg-indigo-600 px-6 py-4">
           <h1 className="text-xl font-bold text-white">
