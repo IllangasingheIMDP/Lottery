@@ -6,8 +6,37 @@ export default function Login() {
   const [gmail, setGmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const router = useRouter();
 
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!gmail) {
+      alert('Please enter your email address first.');
+      return;
+    }
+
+    setIsSendingEmail(true);
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: gmail }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert('Password recovery email sent! Check your inbox (and spam folder).');
+      } else {
+        alert(data.error || 'Failed to send recovery email.');
+      }
+    } catch (error) {
+      alert('An error occurred while sending the email.');
+      console.error(error);
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -84,10 +113,14 @@ export default function Login() {
           <div className="flex items-center justify-between">
             
 
-            <div className="text-sm">
-              <a href="#" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Forgot your password?
-              </a>
+          <div className="text-sm">
+              <button
+                onClick={handleForgotPassword}
+                disabled={isSendingEmail}
+                className="font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50"
+              >
+                {isSendingEmail ? 'Sending...' : 'Forgot your password?'}
+              </button>
             </div>
           </div>
 
