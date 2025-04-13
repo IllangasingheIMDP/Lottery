@@ -1,32 +1,13 @@
 // lib/db.js
 import 'dotenv/config';           // 1) load .env.local
 import mysql from 'mysql2/promise';
-import fs from 'fs';
-import path from 'path';
+
 
 // 2) Destructure & validate env‑vars
-const {
-  DB_HOST,
-  DB_PORT,
-  DB_NAME,
-  DB_USER,
-  DB_PASSWORD,
-  SSL_CA_PATH = 'ca.pem',
-} = process.env;
-if (!DB_HOST || !DB_PORT || !DB_NAME || !DB_USER || !DB_PASSWORD) {
-  console.error('❌ Missing one of DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD');
-  
-}
+
 
 // 3) Load the CA cert
-const caPath = path.resolve(process.cwd(), SSL_CA_PATH);
-let ca;
-try {
-  ca = fs.readFileSync(caPath);
-} catch (err) {
-  console.error('❌ Cannot load CA cert at', caPath, err.message);
-  process.exit(1);
-}
+
 
 // 4) Create the pool (named `db`)
 const db = mysql.createPool({
@@ -35,7 +16,7 @@ const db = mysql.createPool({
   connectionLimit:    10,
   queueLimit:         0,
   ssl: {
-    ca,
+    ca: process.env.CA,
     rejectUnauthorized: true,  // secure
   },
 });
