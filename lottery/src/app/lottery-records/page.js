@@ -144,15 +144,19 @@ export default function LotteryRecords() {
               <h3 className="text-xl font-semibold mb-4 text-blue-800">Financial Summary</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Worth:</span>
+                  <span className="text-gray-600">දී ඇති ටිකට්වල මුළු වටිනාකම:</span>
                   <span className="font-medium">Rs. {formatCurrency(summaries.totalWorth)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Cash Given:</span>
+                  <span className="text-gray-600">මුදලින් ලැබුණු මුදල:</span>
                   <span className="font-medium">Rs. {formatCurrency(summaries.totalCashGiven)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Money:</span>
+                  <span className="text-gray-600">ටිකට්පත් මගින් ලැබුණු මුදල:</span>
+                  <span className="font-medium">Rs. {formatCurrency(summaries.totalTicketsPrice)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">ලැබුණු මුළු මුදල:</span>
                   <span className="font-medium">Rs. {formatCurrency(summaries.totalMoney)}</span>
                 </div>
               </div>
@@ -163,11 +167,11 @@ export default function LotteryRecords() {
               <h3 className="text-xl font-semibold mb-4 text-green-800">NLB Summary</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">NLB Tickets Count:</span>
+                  <span className="text-gray-600">NLB ටිකට් ගණන:</span>
                   <span className="font-medium">{summaries.nlbTicketsCount}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">NLB Total Value:</span>
+                  <span className="text-gray-600">NLB මුළු මුදල:</span>
                   <span className="font-medium">Rs. {formatCurrency(summaries.nlbTotalPrice)}</span>
                 </div>
               </div>
@@ -178,11 +182,11 @@ export default function LotteryRecords() {
               <h3 className="text-xl font-semibold mb-4 text-purple-800">DLB Summary</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">DLB Tickets Count:</span>
+                  <span className="text-gray-600">DLB ටිකට් ගණන:</span>
                   <span className="font-medium">{summaries.dlbTicketsCount}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">DLB Total Value:</span>
+                  <span className="text-gray-600">DLB මුළු මුදල:</span>
                   <span className="font-medium">Rs. {formatCurrency(summaries.dlbTotalPrice)}</span>
                 </div>
               </div>
@@ -192,12 +196,9 @@ export default function LotteryRecords() {
             <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
               <h3 className="text-xl font-semibold mb-4 text-yellow-800">Tickets Summary</h3>
               <div className="space-y-2">
+                
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Total Tickets Value:</span>
-                  <span className="font-medium">Rs. {formatCurrency(summaries.totalTicketsPrice)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Faulty Tickets Value:</span>
+                  <span className="text-gray-600">වැරදි ටිකට් මුදල:</span>
                   <span className="font-medium">Rs. {formatCurrency(summaries.faultyTotalPrice)}</span>
                 </div>
               </div>
@@ -254,11 +255,11 @@ export default function LotteryRecords() {
             <thead>
               <tr className="bg-gray-200 text-gray-700">
                 <th className="py-2 px-4 text-left">Shop</th>
-                <th className="py-2 px-4 text-right">Lottery Qty</th>
-                <th className="py-2 px-4 text-right">Total Worth</th>
-                <th className="py-2 px-4 text-right">Cash Given</th>
-                <th className="py-2 px-4 text-right">NLB Value</th>
-                <th className="py-2 px-4 text-right">DLB Value</th>
+                <th className="py-2 px-4 text-right">ටිකට් ගණන</th>
+                <th className="py-2 px-4 text-right">දී ඇති ටිකට්වල මුළු වටිනාකම</th>
+                <th className="py-2 px-4 text-right">මුදලින් ලැබුණු මුදල</th>
+                <th className="py-2 px-4 text-right">NLB මුදල</th>
+                <th className="py-2 px-4 text-right">DLB මුදල</th>
                 <th className="py-2 px-4 text-center">Status</th>
               </tr>
             </thead>
