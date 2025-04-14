@@ -64,6 +64,7 @@ export default function Header() {
     { name: 'Manage Shops', href: '/manage-shops' },
     { name: 'Lottery Records', href: '/lottery-records' },
     { name: 'Ordering details', href: '/ordering-details' },
+    { name: 'Orders', href: '/orders' },
   ];
 
   return (
