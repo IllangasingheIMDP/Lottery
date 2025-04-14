@@ -53,13 +53,15 @@ You’ll need these installed:
 1. **Clone the Repository**:
    ```bash
    git clone https://github.com/your-username/lottery-management-system.git
-   cd lottery-management-system
+   cd lottery
    ```
 
 2. **Install Dependencies**:
    ```bash
    npm install
+   npm run dev
    ```
+   
 
 3. **Set Up the Database**:
    - Create a MySQL database called `lottery_db`.
@@ -128,19 +130,29 @@ You’ll need these installed:
 ---
 
 ## 🖥️ Usage
+![image](https://github.com/user-attachments/assets/3cebe9fe-a795-4c32-a653-a8bb95eaaf18)
 
 ### 1. **Login**
 - Sign in with your Gmail and password. Use the “Forgot Password” link to reset via email if needed.
+![image](https://github.com/user-attachments/assets/425207aa-c3d6-400e-b2ae-759ddad97176)
 
 ### 2. **Manage Shops**
 - Head to the dashboard to add, edit, or remove shops. Fill in details like name, contact, and address.
+![image](https://github.com/user-attachments/assets/575bb735-e28b-438d-9700-4b14c6c62504)
 
 ### 3. **Daily Records**
 - Go to “Lottery Records” to log daily transactions for each shop—price, quantity, cash, returns, and notes.
+![2025-04-15 02 06 04](https://github.com/user-attachments/assets/1aea94c9-e6db-4560-afd9-b362ac1def6a)
+
+- records
+![image](https://github.com/user-attachments/assets/233878c0-d019-41c1-ab55-a680adfc9122)
 
 ### 4. **Order Management**
 - Visit “Orders” to schedule lottery orders for the next three days.
+![image](https://github.com/user-attachments/assets/9746b72b-d0e9-4b95-b411-1af3153d7355)
+
 - Edit NLB and DLB quantities in their respective tables, then save or cancel your changes.
+![image](https://github.com/user-attachments/assets/924541db-1567-4708-8574-07c461b78df6)
 
 ---
 
@@ -163,15 +175,13 @@ Want to help out? Here’s how:
 
 ---
 
-## 📜 License
-This project is under the MIT License. Check the [LICENSE](LICENSE) file for details.
 
 ---
 
 ## 📬 Contact
 Got questions? Hit me up:
-- **GitHub**: [your-username](https://github.com/your-username)
-- **Email**: your-email@example.com
+- **GitHub**: [IllangasingheIMDP](https://github.com/IllangasingheIMDP)
+- **Email**: dasunpramodya616@gmail.com
 
 ---
 
