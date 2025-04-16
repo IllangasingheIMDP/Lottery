@@ -2,7 +2,7 @@ import db from '@/lib/db';
 import { authenticate } from '@/lib/auth';
 
 export async function POST(req) {
-  const auth = authenticate(req);
+  const auth = authenticate(req,['samarakoonkumara@gmail.com']);
   if (auth.error) {
     return new Response(
       JSON.stringify({ error: auth.error }),
