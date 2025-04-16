@@ -4,7 +4,7 @@ import db from '@/lib/db'; // this is your mysql2/promise pool
 
 export async function GET(req) {
   // 1) auth guard
-  const auth = authenticate(req,['samarakoonkumara@gmail.com']);
+  const auth = authenticate(req,['samarakoonkumara@gmail.com','a@gmail.com']);
   if (auth.error) {
     return new Response(
       JSON.stringify({ error: auth.error }),
