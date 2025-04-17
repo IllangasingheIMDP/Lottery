@@ -8,7 +8,25 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const router = useRouter();
+// Add this state and useEffect to the existing Dashboard component
+const [unbalancedRecords, setUnbalancedRecords] = useState([]);
 
+useEffect(() => {
+  const fetchUnbalancedRecords = async () => {
+    try {
+      const res = await fetch('/api/daily_records/unbalanced');
+      if (!res.ok) throw new Error('Failed to fetch unbalanced records');
+      const data = await res.json();
+      //console.log(data);
+      setUnbalancedRecords(data);
+    } catch (err) {
+      setError(err.message);
+      console.error(err);
+    }
+  };
+
+  fetchUnbalancedRecords();
+}, []);
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -187,6 +205,73 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
+{/* Unbalanced or Faulty Records */}
+<div className="bg-white rounded-lg shadow overflow-hidden mt-8">
+  <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+    <h2 className="text-lg font-semibold text-gray-800">Unbalanced or Faulty Records</h2>
+  </div>
+  <div className="p-3 sm:p-6">
+    {loading ? (
+      <div className="flex justify-center items-center h-32">
+        <svg className="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+    ) : error ? (
+      <div className="bg-red-50 p-4 rounded-lg text-red-800">
+        <p>Error loading records: {error}</p>
+      </div>
+    ) : (
+      <div className="overflow-x-auto -mx-3 sm:-mx-6">
+        {unbalancedRecords?.length > 0 ? (
+          unbalancedRecords.map((record, index) => (
+            <div key={index} className="mb-6">
+              <h3 className="text-md font-medium text-gray-900 mb-2 px-3 sm:px-6">{record.date}</h3>
+              <div className="min-w-full overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shop Name</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unbalanced</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faulty</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {record.shops.map((shop, shopIndex) => (
+                      <tr key={shopIndex} className="hover:bg-gray-50">
+                        <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{shop.shop_name}</td>
+                        <td className={`px-3 sm:px-6 py-3 whitespace-nowrap text-sm ${shop.balanced === 0 ? 'text-red-600 font-medium' : 'text-green-500'}`}>
+                          {shop.remaining_balance}
+                        </td>
+                        <td className={`px-3 sm:px-6 py-3 whitespace-nowrap text-sm ${shop.has_faulty ? 'text-red-500 font-medium' : 'text-green-500'}`}>
+                          {shop.faulty_total_price}
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm">
+                          <Link
+                            href={`/add-edit-record?shopId=${shop.shop_id}&date=${record.date}`}
+                            className="text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            Edit
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center text-sm text-gray-500 py-8">
+            No unbalanced or faulty records found.
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+</div>
           </>
         )}
       </main>
