@@ -51,6 +51,16 @@ import { Suspense } from 'react';
     fetchShops();
   }, [router]);
 
+  const calculateTicketCount = (ticketObj) => {
+    if (!ticketObj) return 0;
+    return Object.entries(ticketObj).reduce((total, [denomination, count]) => {
+      if (denomination !== '0') { // Skip if denomination is 0
+        return total + parseInt(count || 0);
+      }
+      return total;
+    }, 0);
+  };
+
   useEffect(() => {
     const fetchRecords = async () => {
       setLoading(true);
@@ -58,8 +68,14 @@ import { Suspense } from 'react';
         const res = await fetch(`/api/daily_records/all?date=${date}`);
         if (res.ok) {
           const data = await res.json();
-          setRecords(data);
-          calculateSummaries(data);
+          console.log(data);
+          const enrichedData = data.map(record => ({
+            ...record,
+            nlb_quantity: calculateTicketCount(record.nlb), // Calculate NLB ticket count
+            dlb_quantity: calculateTicketCount(record.dlb), // Calculate DLB ticket count
+          }));
+          setRecords(enrichedData);
+          calculateSummaries(enrichedData);
         }
       } catch (error) {
         console.error('Error fetching records:', error);
@@ -275,7 +291,9 @@ import { Suspense } from 'react';
                 <th className="py-2 px-4 text-right">ටිකට් ගණන</th>
                 <th className="py-2 px-4 text-right">දී ඇති ටිකට්වල මුළු වටිනාකම</th>
                 <th className="py-2 px-4 text-right">මුදලින් ලැබුණු මුදල</th>
+                <th className="py-2 px-4 text-right">NLB ටිකට් ගණන </th>
                 <th className="py-2 px-4 text-right">NLB මුදල</th>
+                <th className="py-2 px-4 text-right">DLB ටිකට් ගණන </th>
                 <th className="py-2 px-4 text-right">DLB මුදල</th>
                 <th className="py-2 px-4 text-right">ටිකට්පත් මගින් ලැබුණු මුදල</th>
                 <th className="py-2 px-4 text-right">දෝෂ සහිත අගය</th>
@@ -292,7 +310,9 @@ import { Suspense } from 'react';
                     <td className="py-2 px-4 text-right">{record.lottery_quantity}</td>
                     <td className="py-2 px-4 text-right">Rs. {formatCurrency(record.total_worth)}</td>
                     <td className="py-2 px-4 text-right">Rs. {formatCurrency(record.cash_given)}</td>
+                    <td className="py-2 px-4 text-right">{record.nlb_quantity}</td> 
                     <td className="py-2 px-4 text-right">Rs. {formatCurrency(record.nlb_total_price)}</td>
+                    <td className="py-2 px-4 text-right">{record.dlb_quantity}</td> 
                     <td className="py-2 px-4 text-right">Rs. {formatCurrency(record.dlb_total_price)}</td>
                     <td className="py-2 px-4 text-right">Rs. {formatCurrency(record.got_tickets_total_price)}</td>
                     <td className="py-2 px-4 text-right">Rs. {formatCurrency(record.faulty_total_price)}</td>
