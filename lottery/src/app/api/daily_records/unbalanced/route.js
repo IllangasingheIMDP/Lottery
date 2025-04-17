@@ -17,16 +17,17 @@ export async function GET(req) {
         DATE_FORMAT(dr.date, '%Y-%m-%d') AS date,
         s.id AS shop_id,
         s.name AS shop_name,
-        dr.balanced,dr.faulty_total_price,(dr.total_worth - (dr.faulty_total_price + dr.cash_given + dr.got_tickets_total_price)) AS remaining_balance,
+        dr.balanced,dr.faulty_total_price,(dr.total_worth - ( dr.cash_given + dr.got_tickets_total_price)) AS remaining_balance,
         CASE 
           WHEN dr.faulty IS NOT NULL AND JSON_LENGTH(dr.faulty) > 0 THEN 1 
           ELSE 0 
         END AS has_faulty
       FROM daily_records dr
       JOIN shops s ON dr.shop_id = s.id
-      WHERE dr.balanced = 0 OR (dr.faulty IS NOT NULL AND JSON_LENGTH(dr.faulty) > 0)
+      WHERE dr.balanced = 0 
       ORDER BY dr.date DESC, s.name
     `);
+    //OR (dr.faulty IS NOT NULL AND JSON_LENGTH(dr.faulty) > 0)
        // console.log(records);
     // Group records by date
     const groupedRecords = records.reduce((acc, record) => {
