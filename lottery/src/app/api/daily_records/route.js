@@ -130,6 +130,29 @@ export async function POST(req) {
         [special_lotteries_note, id]
       );
     }
+    
+    // Update balanced status after relevant steps (steps 2, 5, 6 can affect balance)
+    if ([2, 5, 6].includes(step)) {
+      const [records] = await conn.query(
+        'SELECT total_worth, faulty_total_price, cash_given, got_tickets_total_price FROM daily_records WHERE id = ?',
+        [id]
+      );
+      
+      if (records.length > 0) {
+        const record = records[0];
+        const total_worth = Number(parseFloat(record.total_worth || '0').toFixed(2));
+        const faulty_total_price = Number(parseFloat(record.faulty_total_price || '0').toFixed(2));
+        const cash_given = Number(parseFloat(record.cash_given || '0').toFixed(2));
+        const got_tickets_total_price = Number(parseFloat(record.got_tickets_total_price || '0').toFixed(2));
+        
+        const balanced = total_worth === (faulty_total_price + cash_given + got_tickets_total_price) ? 1 : 0;
+        
+        await conn.query(
+          'UPDATE daily_records SET balanced = ? WHERE id = ?',
+          [balanced, id]
+        );
+      }
+    }
 
     await conn.commit();
     return new Response(JSON.stringify({ 
