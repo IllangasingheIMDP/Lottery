@@ -106,9 +106,10 @@ export async function POST(req) {
       const record = records[0];
       const nlb_total_price = Number(parseFloat(record.nlb_total_price || '0').toFixed(2));
       const got_tickets_total_price = Number(parseFloat(record.got_tickets_total_price || '0').toFixed(2));
-      
+      //console.log(nlb_total_price, got_tickets_total_price, dlb_total_price);
       // Calculate equality check (1 = true, 0 = false)
       const equality_check =  ((nlb_total_price+dlb_total_price) === got_tickets_total_price) ? 1 : 0;
+      //console.log(nlb_total_price, got_tickets_total_price, dlb_total_price,equality_check);
       await conn.query(
         'UPDATE daily_records SET dlb = ?, dlb_total_price = ?, equality_check = ?, step = 4 WHERE id = ?',
         [dlb, dlb_total_price, equality_check, id]

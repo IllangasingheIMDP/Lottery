@@ -188,7 +188,7 @@ export default function ViewRecord({searchParams}) {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">ගැලපීම:</span>
-                <span className="font-medium text-orange-600">{record.equality_check ? "ටිකට් මුදල් ගැලපේ":"ටිකට් පත නොගැලපේ."}</span>
+                <span className={`font-bold ${record.equality_check ? 'text-green-700' : 'text-red-500' }`}>{record.equality_check ? "ටිකට් මුදල් ගැලපේ":"ටිකට් පත නොගැලපේ."}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">මුළු ලැබුණු මිල:</span>
