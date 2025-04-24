@@ -431,7 +431,7 @@ function Step2({ initialData, onSubmit, loading }) {
               <input
                 id="cash"
                 type="number"
-                min="0.01"
+                min="0.00"
                 step="0.01"
                 value={cash}
                 onChange={(e) => setCash(e.target.value)}
@@ -453,7 +453,7 @@ function Step2({ initialData, onSubmit, loading }) {
               <input
                 id="totalPrice"
                 type="number"
-                min="0.01"
+                min="0.00"
                 step="0.01"
                 value={totalPrice}
                 onChange={(e) => setTotalPrice(e.target.value)}
