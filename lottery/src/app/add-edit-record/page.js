@@ -118,8 +118,60 @@ function AddEditRecordContent() {
     }
   };
 
+  const handleGoFront = ()=>{
+    if (step < 6) setStep(step + 1);
+  }
+
+  const handleSubmitStep4 = async (stepData) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // For step 1, we need to initialize a new record
+      if (step === 1 && !recordId) {
+        const res = await fetch('/api/daily_records/initialise', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            shop_id: shopId,
+            date: date,
+            data: stepData
+          }),
+        });
+
+        if (!res.ok) throw new Error('Failed to initialize record');
+
+        const result = await res.json();
+        setRecordId(result.recordId);
+      } else {
+        // For subsequent steps or editing existing record
+        const res = await fetch('/api/daily_records', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: recordId,
+            step,
+            data: stepData
+          }),
+        });
+
+        if (!res.ok) throw new Error('Failed to save step');
+      }
+
+      setData({ ...data, ...stepData });
+      
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
+  };
+  const goBack = () => {
+    if (step ==4) setStep(2);
   };
 
 
@@ -160,8 +212,10 @@ function AddEditRecordContent() {
         return (
           <Step4
             initialData={{ dlb: data.dlb ? (typeof data.dlb === 'string' ? JSON.parse(data.dlb) : data.dlb) : {} }}
-            onSubmit={handleSubmit}
+            onSubmit={handleSubmitStep4}
+            goFront={handleGoFront}
             loading={loading}
+            goBack={goBack}
           />
         );
       case 5:
@@ -651,7 +705,7 @@ function Step3({ initialData, onSubmit, loading }) {
 }
 
 
-function Step4({ initialData, onSubmit, loading }) {
+function Step4({ initialData, onSubmit, loading, goBack,goFront }) {
   const [dlb, setDlb] = useState(initialData.dlb || {});
   const [newPrice, setNewPrice] = useState('');
   const [newCount, setNewCount] = useState('');
@@ -795,20 +849,37 @@ function Step4({ initialData, onSubmit, loading }) {
         </div>
 
         <div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-          >
-            {loading ? (
-              <>
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent align-[-0.125em] mr-2"></span>
-                Processing...
-              </>
-            ) : (
-              'Next'
-            )}
-          </button>
+          <div className="flex gap-4">
+            <button
+              type="button"
+              onClick={goBack}
+              className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Back to Step 2
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent align-[-0.125em] mr-2"></span>
+                  Processing...
+                </>
+              ) : (
+                'Save'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={goFront}
+              className="flex-1 text-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium  bg-teal-800 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Next
+            </button>
+          </div>
+          <p className="text-md text-center text-gray-500 italic">Save before going to next step or go back</p>
         </div>
       </form>
     </Suspense>
