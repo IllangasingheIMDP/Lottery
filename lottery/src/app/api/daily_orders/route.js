@@ -10,7 +10,7 @@ export async function GET(req) {
     }
     const { searchParams } = new URL(req.url);
     const dates = searchParams.get('dates').split(',');
-    console.log(dates);
+    //console.log(dates);
     try {
         const [rows] = await db.query(`
            SELECT DATE_FORMAT(date, '%Y-%m-%d') as date, lottery_type_id, quantity

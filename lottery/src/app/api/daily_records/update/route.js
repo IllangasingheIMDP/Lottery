@@ -72,9 +72,9 @@ export async function POST(req) {
         nlb_total_price + dlb_total_price === got_tickets_total_price
           ? 1
           : 0;
-      console.log('equality_check in update', equality_check);
-      console.log('record.nlb_total_price', record.nlb_total_price, 'dlb_total_price', dlb_total_price);
-      console.log('record.got_tickets_total_price', record.got_tickets_total_price);
+      //console.log('equality_check in update', equality_check);
+      //console.log('record.nlb_total_price', record.nlb_total_price, 'dlb_total_price', dlb_total_price);
+      //console.log('record.got_tickets_total_price', record.got_tickets_total_price);
       await conn.query(
         `UPDATE daily_records
            SET dlb = ?, dlb_total_price = ?, equality_check = ?

@@ -16,9 +16,12 @@ import { Suspense } from 'react';
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const dateReceived = searchParams.date;
+
+
+
   useEffect(() => {
     if (dateReceived) {
-      console.log(dateReceived);
+      //console.log(dateReceived);
       setDate(dateReceived);
     }
   },[dateReceived]);
@@ -33,7 +36,25 @@ import { Suspense } from 'react';
     totalMoney: 0,
     faultyTotalPrice: 0
   });
+ 
+  const [orderedCount, setOrderedCount] = useState({});
+  const [dailyNote, setDailyNote] = useState('');
+  const [isEditingNote, setIsEditingNote] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const validDates = [date];
+    const fetchDailyOrders = async () => {
+      const dailyOrdersRes = await fetch(`/api/daily_orders?dates=${validDates.join(',')}`).then(res => res.json());
+      if(dailyOrdersRes[date]){
+        const sum = Object.values(dailyOrdersRes[date]).reduce((total, value) => total + value, 0);
+        console.log(sum);
+        setOrderedCount(prev => ({...prev, [date]: sum}));
+      }
+     
+    }
+    fetchDailyOrders();
+  },[date]);
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -68,7 +89,7 @@ import { Suspense } from 'react';
         const res = await fetch(`/api/daily_records/all?date=${date}`);
         if (res.ok) {
           const data = await res.json();
-          console.log(data);
+          //console.log(data);
           const enrichedData = data.map(record => ({
             ...record,
             nlb_quantity: calculateTicketCount(record.nlb), // Calculate NLB ticket count
@@ -143,6 +164,79 @@ import { Suspense } from 'react';
     return parseFloat(value).toFixed(2);
   };
 
+  // Fetch daily note
+  useEffect(() => {
+    const fetchDailyNote = async () => {
+      try {
+        const res = await fetch(`/api/daily_notes?date=${date}`);
+        if (res.ok) {
+          const data = await res.json();
+          setDailyNote(data.note || '');
+        }
+      } catch (error) {
+        console.error('Error fetching daily note:', error);
+      }
+    };
+
+    if (date) {
+      fetchDailyNote();
+    }
+  }, [date]);
+
+  // Create or update daily note
+  const handleSaveNote = async () => {
+    try {
+      const res = await fetch('/api/daily_notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date,
+          note: dailyNote
+        }),
+      });
+
+      if (res.ok) {
+        setIsEditingNote(false);
+      } else {
+        console.error('Failed to save note');
+      }
+    } catch (error) {
+      console.error('Error saving note:', error);
+    }
+  };
+
+  // Delete daily note
+  const handleDeleteNote = async () => {
+    try {
+      const res = await fetch(`/api/daily_notes?date=${date}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setDailyNote('');
+        setIsEditingNote(false);
+      } else {
+        console.error('Failed to delete note');
+      }
+    } catch (error) {
+      console.error('Error deleting note:', error);
+    }
+  };
+
+  // Calculate total tickets given
+  const calculateTotalTicketsGiven = () => {
+    return records.reduce((total, record) => total + (record.lottery_quantity || 0), 0);
+  };
+
+  // Calculate ticket difference
+  const calculateTicketDifference = () => {
+    const totalGiven = calculateTotalTicketsGiven();
+    const ordered = orderedCount[date] || 0;
+    return ordered - totalGiven;
+  };
+
   return (
     
     <div>
@@ -151,7 +245,7 @@ import { Suspense } from 'react';
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Lottery Records</h1>
       
-      {/* Date Selector */}
+      
       <div className="mb-8">
         <label className="block text-gray-700 text-sm font-bold mb-2">
           Select Date:
@@ -329,7 +423,113 @@ import { Suspense } from 'react';
           </table>
         </div>
       )}
+      {/* Daily Note Section */}
+      <div className="mb-8 bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold mb-4">Tickets Balance</h2>
+        
+        {/* Ticket Information */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700">ඇණවුම් කළ ටිකට්පත්:</span>
+                <span className="font-medium text-lg">{orderedCount[date] || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700">ලබා දුන් ටිකට්පත්:</span>
+                <span className="font-medium text-lg">{calculateTotalTicketsGiven()}</span>
+              </div>
+              {(() => {
+                const difference = calculateTicketDifference();
+                if (difference > 0) {
+                  return (
+                    <div className="flex justify-between items-center text-green-600">
+                      <span>ඉතිරිව ඇති ටිකට්පත්:</span>
+                      <span className="font-medium text-lg">{difference}</span>
+                    </div>
+                  );
+                } else if (difference < 0) {
+                  return (
+                    <div className="flex justify-between items-center text-red-600">
+                      <span>ලැබුණු අමතර ටිකට්පත්:</span>
+                      <span className="font-medium text-lg">{Math.abs(difference)}</span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+            </div>
+          </div>
+
+          {/* Daily Note */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-gray-700 font-medium">Daily Note</h3>
+              {!isEditingNote ? (
+                <button
+                  onClick={() => setIsEditingNote(true)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-1 px-3 rounded flex items-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit
+                </button>
+              ) : (
+                <div className="space-x-2">
+                  <button
+                    onClick={handleSaveNote}
+                    className="bg-green-500 hover:bg-green-600 text-white text-sm font-medium py-1 px-3 rounded flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setIsEditingNote(false)}
+                    className="bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium py-1 px-3 rounded flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Cancel
+                  </button>
+                  {dailyNote && (
+                    <button
+                      onClick={handleDeleteNote}
+                      className="bg-red-500 hover:bg-red-600 text-white text-sm font-medium py-1 px-3 rounded flex items-center"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            {isEditingNote ? (
+              <textarea
+                value={dailyNote}
+                onChange={(e) => setDailyNote(e.target.value)}
+                className="w-full h-32 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter your note here..."
+              />
+            ) : (
+              <div className="min-h-[8rem] p-3 bg-white rounded-lg border">
+                <p className="text-gray-700 whitespace-pre-wrap">
+                  {dailyNote || 'No note for this date'}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      
     </div>
+    
   </div>
 
   );

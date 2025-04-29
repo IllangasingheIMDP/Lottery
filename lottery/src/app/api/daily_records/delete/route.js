@@ -14,7 +14,7 @@ export async function POST(req) {
 
   // 2) parse body
   const { shopId,date } = await req.json();
-  console.log(shopId,date);
+  //console.log(shopId,date);
 
   let conn;
   try {
@@ -23,7 +23,7 @@ export async function POST(req) {
     await conn.beginTransaction();
     const query='DELETE FROM daily_records WHERE (shop_id = ?) and (date = ?)';
     const result=await conn.query(query,[shopId,date]);
-    console.log(result);
+    //console.log(result);
     
 
     await conn.commit();

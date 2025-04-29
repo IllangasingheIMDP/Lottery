@@ -15,7 +15,7 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const date = searchParams.get('date');
   try {
-    console.log(date);
+    //console.log(date);
     // db.query() returns [rows, fields]
     const [records] = await db.query('SELECT * FROM daily_records WHERE date = ?', [date]);
     return new Response(JSON.stringify(records), { status: 200 });
