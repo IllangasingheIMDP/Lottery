@@ -55,7 +55,7 @@ function AddEditRecordContent() {
 
         }),
       });
-      console.log(res);
+      //console.log(res);
       if (res.status !== 200) throw new Error('Failed to Delete record');
       if (res.status === 200) {
         alert('Record deleted successfully')
