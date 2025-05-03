@@ -22,3 +22,23 @@ export async function GET(req) {
     );
   }
 }
+
+export async function DELETE(req) {
+  const auth = authenticate(req, ['samarakoonkumara@gmail.com']);
+  if (auth.error) {
+    return new Response(
+      JSON.stringify({ error: auth.error }),
+      { status: auth.status }
+    );
+  }
+
+  try {
+    const { id } = await req.json();
+    await db.query('DELETE FROM shops WHERE id = ?', [id]);
+    return new Response(JSON.stringify({ message: 'Shop deleted successfully' }), { status: 200 });
+  } catch (error) {
+    console.error('DELETE /api/shops error:', error);
+    return new Response(JSON.stringify({ error: 'Server error' }), { status: 500 });
+  }
+}
+
