@@ -153,7 +153,7 @@ export default function ViewRecord({searchParams}) {
               </div>
               <div className="flex justify-between items-center border-b border-gray-100 pb-2">
                 <span className="text-gray-600">මුළු මුදල ගැලපීම:</span>
-                {Number(record.total_worth) == (Number(record.got_tickets_total_price) + Number(record.cash_given)+Number(record.faulty_total_price)) ? <span className="font-medium text-blue-600">{record.total_worth} = {record.cash_given} + {record.got_tickets_total_price} + {record.faulty_total_price}</span> : <span className="font-medium text-red-600"> {record.total_worth} ≠ {record.cash_given} + {record.got_tickets_total_price} + {record.faulty_total_price} </span>}
+                {Number(record.total_worth) == (Number(record.got_tickets_total_price) + Number(record.cash_given)+Number(record.faulty_total_price)) ? <span className="font-medium text-blue-600"></span> : <span className="font-medium text-red-600"> {Number(record.total_worth) - (Number(record.got_tickets_total_price) + Number(record.cash_given)+Number(record.faulty_total_price))} </span>}
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">විශේෂ සටහන්:</span>
