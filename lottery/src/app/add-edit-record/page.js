@@ -118,7 +118,7 @@ function AddEditRecordContent() {
     }
   };
 
-  const handleGoFront = ()=>{
+  const handleGoFront = () => {
     if (step < 6) setStep(step + 1);
   }
 
@@ -159,7 +159,7 @@ function AddEditRecordContent() {
       }
 
       setData({ ...data, ...stepData });
-      
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -171,7 +171,7 @@ function AddEditRecordContent() {
     if (step > 1) setStep(step - 1);
   };
   const goBack = () => {
-    if (step ==4) setStep(2);
+    if (step == 4) setStep(2);
   };
 
 
@@ -249,17 +249,17 @@ function AddEditRecordContent() {
               {recordId ? 'Edit Record' : 'Add New Record'} - Step {step}
             </h1>
             <div className='w-fit h-fit flex flex-row justify-between'>
-            <button
-              onClick={handleGoBack}
-              className="text-white bg-blue-600 px-2 rounded-4xl hover:text-gray-900 hover:cursor-pointer"
-              aria-label="Go back"
-            >
-              <IoArrowBack size={24} />
-            </button>
-            <button onClick={(e) => { e.preventDefault(); handleDelete(shopId, date); }} className='bg-red-700 text-white px-2 py-1 rounded hover:cursor-pointer'>Delete</button>
-          
+              <button
+                onClick={handleGoBack}
+                className="text-white bg-blue-600 px-2 rounded-4xl hover:text-gray-900 hover:cursor-pointer"
+                aria-label="Go back"
+              >
+                <IoArrowBack size={24} />
+              </button>
+              <button onClick={(e) => { e.preventDefault(); handleDelete(shopId, date); }} className='bg-red-700 text-white px-2 py-1 rounded hover:cursor-pointer'>Delete</button>
+
             </div>
-           </div>
+          </div>
 
           {/* Progress Bar */}
           <div className="px-6 pt-4">
@@ -456,9 +456,58 @@ function Step1({ initialData, onSubmit, loading }) {
   );
 }
 
+// Modify Step2 component
 function Step2({ initialData, onSubmit, loading }) {
   const [cash, setCash] = useState(initialData.cash_given || '');
   const [totalPrice, setTotalPrice] = useState(initialData.got_tickets_total_price || '');
+  const [loanBalance, setLoanBalance] = useState(0);
+  const [loanAmount, setLoanAmount] = useState('');
+  const [loadingLoan, setLoadingLoan] = useState(false);
+  const searchParams = useSearchParams();
+  const shopId = searchParams.get('shopId');
+
+  // Fetch loan balance when component mounts
+  useEffect(() => {
+    if (shopId) {
+      fetch(`/api/loans?shop_id=${shopId}`)
+        .then(res => res.json())
+        .then(data => {
+          setLoanBalance(data.unbalanced_amount || 0);
+        })
+        .catch(err => {
+          console.error('Failed to fetch loan balance:', err);
+        });
+    }
+  }, [shopId]);
+
+  const handleLoanSubmit = async (e) => {
+    e.preventDefault();
+    if (!loanAmount || !shopId) return;
+
+    setLoadingLoan(true);
+    try {
+      const res = await fetch('/api/loans', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          shop_id: shopId,
+          amount: parseFloat(loanAmount),
+          payment_date: searchParams.get('date') // Get the date from URL params
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to submit loan');
+
+      alert('Loan submitted successfully');
+      window.location.reload();
+    } catch (error) {
+      alert('Failed to submit loan: ' + error.message);
+    } finally {
+      setLoadingLoan(false);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -470,72 +519,115 @@ function Step2({ initialData, onSubmit, loading }) {
 
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <h2 className="text-lg font-medium text-gray-900">මුදල් සහ ටිකට්පත්</h2>
+      <div className="space-y-6">
+        {/* Loan Balance and Submission Section */}
+        <div className="bg-gray-50 p-4 rounded-md space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-500">ණය ශේෂය:</span>
+            <span className="text-lg font-bold text-red-600">
+              ${parseFloat(loanBalance).toFixed(2)}
+            </span>
+          </div>
 
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="cash" className="block text-sm font-medium text-gray-700">
-              මුදලින් ලැබුණු මුදල
-            </label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">$</span>
+          <form onSubmit={handleLoanSubmit} className="flex gap-4">
+            <div className="flex-1">
+              <label htmlFor="loanAmount" className="sr-only">
+                ණය මුදල
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">$</span>
+                </div>
+                <input
+                  id="loanAmount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={loanAmount}
+                  onChange={(e) => setLoanAmount(e.target.value)}
+                  className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  placeholder="Enter loan amount"
+                />
               </div>
-              <input
-                id="cash"
-                type="number"
-                min="0.00"
-                step="0.01"
-                value={cash}
-                onChange={(e) => setCash(e.target.value)}
-                className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                placeholder="0.00"
-                required
-              />
+            </div>
+            <button
+              type="submit"
+              disabled={loadingLoan}
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              {loadingLoan ? 'Submitting...' : 'Submit Loan'}
+            </button>
+          </form>
+        </div>
+
+        {/* Existing Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <h2 className="text-lg font-medium text-gray-900">මුදල් සහ ටිකට්පත්</h2>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="cash" className="block text-sm font-medium text-gray-700">
+                මුදලින් ලැබුණු මුදල
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">$</span>
+                </div>
+                <input
+                  id="cash"
+                  type="number"
+                  min="0.00"
+                  step="0.01"
+                  value={cash}
+                  onChange={(e) => setCash(e.target.value)}
+                  className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="totalPrice" className="block text-sm font-medium text-gray-700">
+                ටිකට්පත් මගින් ලැබුණු මුදල
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">$</span>
+                </div>
+                <input
+                  id="totalPrice"
+                  type="number"
+                  min="0.00"
+                  step="0.01"
+                  value={totalPrice}
+                  onChange={(e) => setTotalPrice(e.target.value)}
+                  className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
             </div>
           </div>
 
           <div>
-            <label htmlFor="totalPrice" className="block text-sm font-medium text-gray-700">
-              ටිකට්පත් මගින් ලැබුණු මුදල
-            </label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">$</span>
-              </div>
-              <input
-                id="totalPrice"
-                type="number"
-                min="0.00"
-                step="0.01"
-                value={totalPrice}
-                onChange={(e) => setTotalPrice(e.target.value)}
-                className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                placeholder="0.00"
-                required
-              />
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent align-[-0.125em] mr-2"></span>
+                  Processing...
+                </>
+              ) : (
+                'Next'
+              )}
+            </button>
           </div>
-        </div>
-
-        <div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-          >
-            {loading ? (
-              <>
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-r-transparent align-[-0.125em] mr-2"></span>
-                Processing...
-              </>
-            ) : (
-              'Next'
-            )}
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </Suspense>
   );
 }
@@ -705,7 +797,7 @@ function Step3({ initialData, onSubmit, loading }) {
 }
 
 
-function Step4({ initialData, onSubmit, loading, goBack,goFront }) {
+function Step4({ initialData, onSubmit, loading, goBack, goFront }) {
   const [dlb, setDlb] = useState(initialData.dlb || {});
   const [newPrice, setNewPrice] = useState('');
   const [newCount, setNewCount] = useState('');
