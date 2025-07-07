@@ -70,7 +70,7 @@ export default function Login() {
       backgroundRepeat: 'no-repeat'
     }}>
     
-      <div className="w-full max-w-md p-8 space-y-8 bg-white/50 backdrop-blur-md rounded-lg shadow-md">
+      <div className="sm:w-full w-fit max-w-md p-8 space-y-8 bg-white/50 backdrop-blur-md rounded-lg shadow-md">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
           <p className="mt-2 text-sm text-gray-900">Sign in to your account</p>
@@ -91,7 +91,7 @@ export default function Login() {
                   required
                   value={gmail}
                   onChange={(e) => setGmail(e.target.value)}
-                  className="appearance-none block w-full    px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                  className="appearance-none block w-full    px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-teal-950 focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm"
                   placeholder="your.email@gmail.com"
                 />
               </div>
@@ -110,7 +110,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-teal-950 focus:outline-none focus:ring-teal-500 focus:border-teal-500 text-sm"
                   placeholder="••••••••"
                 />
               </div>
