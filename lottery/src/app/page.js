@@ -1,4 +1,9 @@
 'use client';
+import Head from 'next/head';
+<Head>
+  <link rel="preload" href="/dashboard_bg.webp" as="image" />
+</Head>
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -109,14 +114,8 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50"
+    <div className="min-h-screen bg-[url('/dashboard_bg.webp')] bg-cover bg-top bg-no-repeat">
 
-      style={{
-        backgroundImage: "url('/dashboard_bg.webp')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'top',
-        backgroundRepeat: 'no-repeat'
-      }}>
       {/* Header */}
       <Header />
 
@@ -301,7 +300,7 @@ export default function Dashboard() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white shadow-inner mt-8">
+      <footer className="bg-white shadow-inner mt-8 bottom-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-500">
