@@ -137,10 +137,10 @@ export default function Dashboard() {
             {/* Welcome message */}
             <div className="bg-transparent rounded-lg shadow border-white/20 border overflow-hidden mb-8">
               <div className="bg-white/10 backdrop-blur-xl px-6 py-8 md:py-10">
-                <h2 className="text-2xl font-bold text-blue-300">
+                <h2 className="text-2xl text-blue-200">
                   {getGreeting()}, {user?.username || 'User'}!
                 </h2>
-                <p className="mt-2 text-blue-100">
+                <p className="mt-2 text-blue-100/50">
                   Welcome to your lottery management dashboard. Here&apos;s an overview of your system.
                 </p>
               </div>
