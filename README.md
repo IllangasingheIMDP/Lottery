@@ -130,7 +130,7 @@ You’ll need these installed:
 ---
 
 ## 🖥️ Usage
-![image](https://github.com/user-attachments/assets/3cebe9fe-a795-4c32-a653-a8bb95eaaf18)
+<img width="1890" height="934" alt="image" src="https://github.com/user-attachments/assets/e78fcb7e-73b9-48a6-8885-776278218788" />
 
 ### 1. **Login**
 - Sign in with your Gmail and password. Use the “Forgot Password” link to reset via email if needed.
