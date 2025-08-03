@@ -337,7 +337,6 @@ function LotteryRecordsContent() {
               <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
                 <h3 className="text-xl font-semibold mb-4 text-yellow-800">Tickets Summary</h3>
                 <div className="space-y-2">
-
                   <div className="flex justify-between">
                     <span className="text-gray-600">වැරදි ටිකට් මුදල:</span>
                     <span className="font-medium">Rs. {formatCurrency(summaries.faultyTotalPrice)}</span>
@@ -346,6 +345,47 @@ function LotteryRecordsContent() {
                     <span className="text-gray-600">ලැබුණු ණය මුදල:</span>
                     <span className="font-medium">Rs. {formatCurrency(loanTotal)}</span>
                   </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-indigo-500">
+                <h3 className="text-xl font-semibold mb-4 text-indigo-800">Ticket Price Categories</h3>
+                <div className="space-y-4">
+                  {records.length > 0 && (() => {
+                    // Group records by price per ticket
+                    const priceGroups = records.reduce((groups, record) => {
+                      const pricePerTicket = record.total_worth / record.lottery_quantity;
+                      if (!groups[pricePerTicket]) {
+                        groups[pricePerTicket] = {
+                          totalTickets: 0,
+                          shops: new Set(),
+                          shopNames: []
+                        };
+                      }
+                      groups[pricePerTicket].totalTickets += record.lottery_quantity;
+                      groups[pricePerTicket].shops.add(record.shop_id);
+                      const shopName = shops.find(s => s.id === record.shop_id)?.name || `Shop #${record.shop_id}`;
+                      if (!groups[pricePerTicket].shopNames.includes(shopName)) {
+                        groups[pricePerTicket].shopNames.push(shopName);
+                      }
+                      return groups;
+                    }, {});
+
+                    return Object.entries(priceGroups)
+                      .sort(([priceA], [priceB]) => Number(priceA) - Number(priceB))
+                      .map(([price, data]) => (
+                        <div key={price} className="border-b pb-3 last:border-b-0">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-gray-600 font-medium">Rs. {formatCurrency(price)} ටිකට්:</span>
+                            <span className="font-medium">{data.totalTickets} ක්</span>
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            <span className="block">සාප්පු ({data.shops.size}): </span>
+                            <span className="text-gray-600">{data.shopNames.join(', ')}</span>
+                          </div>
+                        </div>
+                      ));
+                  })()}
                 </div>
               </div>
             </div>
@@ -391,7 +431,7 @@ function LotteryRecordsContent() {
             ))}
           </div>
         </div>
-
+            {/* Price per ticket,tickets count,shops */}
         {/* Records Table (Optional - if you want to show individual records) */}
         {records.length > 0 && (
           <div className="overflow-x-auto">
