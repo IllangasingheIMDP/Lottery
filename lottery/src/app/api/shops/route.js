@@ -11,8 +11,15 @@ export async function GET(req) {
   }
 
   try {
-    // db.query() returns [rows, fields]
-    const [shops] = await db.query('SELECT * FROM shops');
+    // Modified to only return active shops by default
+    const { searchParams } = new URL(req.url);
+    const includeInactive = searchParams.get('includeInactive') === 'true';
+
+    const query = includeInactive 
+      ? 'SELECT * FROM shops'
+      : 'SELECT * FROM shops WHERE active = TRUE';
+
+    const [shops] = await db.query(query);
     return new Response(JSON.stringify(shops), { status: 200 });
   } catch (error) {
     console.error('GET /api/shops error:', error);
@@ -34,11 +41,46 @@ export async function DELETE(req) {
 
   try {
     const { id } = await req.json();
-    await db.query('DELETE FROM shops WHERE id = ?', [id]);
-    return new Response(JSON.stringify({ message: 'Shop deleted successfully' }), { status: 200 });
+    // Instead of deleting, update the active status
+    await db.query('UPDATE shops SET active = FALSE WHERE id = ?', [id]);
+    return new Response(
+      JSON.stringify({ message: 'Shop deactivated successfully' }), 
+      { status: 200 }
+    );
   } catch (error) {
     console.error('DELETE /api/shops error:', error);
-    return new Response(JSON.stringify({ error: 'Server error' }), { status: 500 });
+    return new Response(
+      JSON.stringify({ error: 'Server error' }), 
+      { status: 500 }
+    );
+  }
+}
+
+// Add new endpoint to reactivate shops
+export async function PATCH(req) {
+  const auth = authenticate(req, ['samarakoonkumara@gmail.com']);
+  if (auth.error) {
+    return new Response(
+      JSON.stringify({ error: auth.error }),
+      { status: auth.status }
+    );
+  }
+
+  try {
+    const { id, active } = await req.json();
+    await db.query('UPDATE shops SET active = ? WHERE id = ?', [active, id]);
+    return new Response(
+      JSON.stringify({ 
+        message: active ? 'Shop activated successfully' : 'Shop deactivated successfully' 
+      }),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('PATCH /api/shops error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Server error' }), 
+      { status: 500 }
+    );
   }
 }
 

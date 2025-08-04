@@ -10,13 +10,14 @@ export default function ManageShops() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const fetchShops = async () => {
       try {
         setLoading(true);
-        const res = await fetch('/api/shops');
+        const res = await fetch(`/api/shops?includeInactive=${showInactive}`);
         if (!res.ok) throw new Error('Failed to fetch shops');
         const data = await res.json();
         setShops(data);
@@ -28,7 +29,7 @@ export default function ManageShops() {
     };
     
     fetchShops();
-  }, []);
+  }, [showInactive]);
 
   const handleAddShop = async (e) => {
     e.preventDefault();
@@ -61,26 +62,31 @@ export default function ManageShops() {
     }
   };
 
-  const handleDeleteShop = async (shopId) => {
-    // Get the shop name for the confirmation message
-    const shopToDelete = shops.find(shop => shop.id === shopId);
-    if (!shopToDelete) return;
+  const handleToggleShopStatus = async (shopId, currentStatus) => {
+    // Get the shop for the confirmation message
+    const shop = shops.find(shop => shop.id === shopId);
+    if (!shop) return;
 
     // Show confirmation dialog
-    const isConfirmed = window.confirm(`Are you sure you want to delete the shop "${shopToDelete.name}"?`);
+    const action = currentStatus ? 'deactivate' : 'activate';
+    const isConfirmed = window.confirm(`Are you sure you want to ${action} the shop "${shop.name}"?`);
     if (!isConfirmed) return;
 
     try {
       const res = await fetch('/api/shops', {
-        method: 'DELETE',
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: shopId }),
+        body: JSON.stringify({ id: shopId, active: !currentStatus }),
       });
       
-      if (!res.ok) throw new Error('Failed to delete shop');
+      if (!res.ok) throw new Error(`Failed to ${action} shop`);
       
-      // Update the shops list by removing the deleted shop
-      setShops(shops.filter(shop => shop.id !== shopId));
+      // Update the shop's status in the list
+      setShops(shops.map(shop => 
+        shop.id === shopId 
+          ? { ...shop, active: !currentStatus }
+          : shop
+      ));
       
       // Show success message
       setShowSuccess(true);
@@ -207,7 +213,21 @@ export default function ManageShops() {
         <div className="lg:col-span-3">
           <div className="bg-white shadow-md rounded-lg overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800">Existing Shops</h2>
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-gray-800">Existing Shops</h2>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="showInactive"
+                    checked={showInactive}
+                    onChange={(e) => setShowInactive(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="showInactive" className="ml-2 text-sm text-gray-600">
+                    Show inactive shops
+                  </label>
+                </div>
+              </div>
             </div>
             
             {loading ? (
@@ -229,10 +249,19 @@ export default function ManageShops() {
             ) : (
               <div className="divide-y divide-gray-200">
                 {shops.map((shop) => (
-                  <div key={shop.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div key={shop.id} className={`p-4 hover:bg-gray-50 transition-colors ${!shop.active ? 'opacity-75' : ''}`}>
                     <div className="flex justify-between">
                       <div>
-                        <h3 className="text-lg font-medium text-gray-900">{shop.name}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-medium text-gray-900">{shop.name}</h3>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            shop.active 
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {shop.active ? 'Active' : 'Inactive'}
+                          </span>
+                        </div>
                         <div className="mt-1 flex items-center text-sm text-gray-500">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -250,13 +279,29 @@ export default function ManageShops() {
                         )}
                       </div>
                       <button
-                        onClick={() => handleDeleteShop(shop.id)}
-                        className="text-red-600 hover:text-red-800 transition-colors hover:cursor-pointer"
-                        title="Delete shop"
+                        onClick={() => handleToggleShopStatus(shop.id, shop.active)}
+                        className={`transition-colors hover:cursor-pointer flex items-center gap-1 px-2 py-1 rounded-md ${
+                          shop.active
+                            ? 'text-red-600 hover:text-red-800 hover:bg-red-50'
+                            : 'text-green-600 hover:text-green-800 hover:bg-green-50'
+                        }`}
+                        title={shop.active ? "Deactivate shop" : "Activate shop"}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
+                        {shop.active ? (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" />
+                            </svg>
+                            <span className="text-sm font-medium">Deactivate</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-sm font-medium">Activate</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>

@@ -13,9 +13,8 @@ export async function POST(req) {
   const { name, contact_number, address } = await req.json();
 
   try {
-    // You can destructure the result if you need insertId, but it's not required
     await db.query(
-      'INSERT INTO shops (name, contact_number, address) VALUES (?, ?, ?)',
+      'INSERT INTO shops (name, contact_number, address, active) VALUES (?, ?, ?, TRUE)',
       [name, contact_number, address]
     );
     return new Response(

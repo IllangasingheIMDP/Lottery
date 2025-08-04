@@ -40,6 +40,7 @@ function LotteryRecordsContent() {
 
   const [orderedCount, setOrderedCount] = useState({});
   const [dailyNote, setDailyNote] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
   const [isEditingNote, setIsEditingNote] = useState(false);
   const router = useRouter();
 
@@ -73,7 +74,7 @@ function LotteryRecordsContent() {
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const res = await fetch('/api/shops');
+        const res = await fetch(`/api/shops?includeInactive=${showInactive}`);
         if (res.ok) {
           setShops(await res.json());
         } else {
@@ -84,7 +85,7 @@ function LotteryRecordsContent() {
       }
     };
     fetchShops();
-  }, [router]);
+  }, [router, showInactive]);
 
   const calculateTicketCount = (ticketObj) => {
     if (!ticketObj) return 0;
@@ -394,24 +395,74 @@ function LotteryRecordsContent() {
 
         {/* Shops Section */}
         <div className="mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">Shops</h2>
-            <button
-              onClick={() => router.push('/manage-shops')}
-              className="bg-gray-800 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            >
-              Manage Shops
-            </button>
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              {/* Left Section */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-between">
+                  <h2 className="text-2xl sm:text-3xl font-semibold text-gray-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    Shops
+                  </h2>
+                  <div className="block sm:hidden">
+                    <button
+                      onClick={() => router.push('/manage-shops')}
+                      className="bg-blue-600 hover:bg-blue-700 transition-colors text-white text-sm font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm flex items-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Manage
+                    </button>
+                  </div>
+                </div>
+                
+                <label htmlFor="showInactive" className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                  <input
+                    type="checkbox"
+                    id="showInactive"
+                    checked={showInactive}
+                    onChange={(e) => setShowInactive(e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-2 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <span className="text-sm px-2 font-medium text-gray-700 select-none">Show inactive shops</span>
+                </label>
+              </div>
+
+              {/* Right Section - Hidden on mobile, shown on desktop */}
+              <div className="hidden sm:block">
+                <button
+                  onClick={() => router.push('/manage-shops')}
+                  className="bg-blue-600 hover:bg-blue-700 transition-colors text-white font-medium py-2.5 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm flex items-center gap-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Manage Shops
+                </button>
+              </div>
+            </div>
           </div>
+
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {shops.map((shop) => (
               <div
                 key={shop.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden"
+                className={`bg-white rounded-lg shadow-md overflow-hidden ${!shop.active ? 'opacity-75' : ''}`}
               >
                 <div className="bg-gray-100 px-4 py-3 border-b">
-                  <h3 className="font-semibold truncate">{shop.name}</h3>
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold truncate">{shop.name}</h3>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${shop.active
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                      }`}>
+                      {shop.active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
                 </div>
                 <div className="p-4 flex flex-col gap-2">
                   <button
@@ -431,7 +482,7 @@ function LotteryRecordsContent() {
             ))}
           </div>
         </div>
-            {/* Price per ticket,tickets count,shops */}
+        {/* Price per ticket,tickets count,shops */}
         {/* Records Table (Optional - if you want to show individual records) */}
         {records.length > 0 && (
           <div className="overflow-x-auto">
