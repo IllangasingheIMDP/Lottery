@@ -26,6 +26,9 @@ export default function Orders() {
     const [defaultQuantities, setDefaultQuantities] = useState({});
     const [dailyOrders, setDailyOrders] = useState({});
     const [loading, setLoading] = useState(false);
+    const [orderingNotes, setOrderingNotes] = useState([]);
+    const [notesLoading, setNotesLoading] = useState(false);
+    const [shops, setShops] = useState([]);
 
     // Set initial dates: today, tomorrow, and the day after tomorrow
     const today = new Date();
@@ -49,13 +52,15 @@ export default function Orders() {
         const fetchInitialData = async () => {
             setLoading(true);
             try {
-                const [lotteryTypesRes, defaultQuantitiesRes] = await Promise.all([
+                const [lotteryTypesRes, defaultQuantitiesRes, shopsRes] = await Promise.all([
                     fetch('/api/lottery_types').then(res => res.json()),
                     fetch('/api/default_quantities').then(res => res.json()),
+                    fetch('/api/shops').then(res => res.json()),
                 ]);
                 
                 setLotteryTypes(lotteryTypesRes);
                 setDefaultQuantities(defaultQuantitiesRes);
+                setShops(shopsRes);
     
                 await fetchDailyOrders(initialDates, lotteryTypesRes, defaultQuantitiesRes);
             } catch (error) {
@@ -95,11 +100,68 @@ export default function Orders() {
             });
             setDailyOrders(initialDailyOrders);
             setOriginalDailyOrders(JSON.parse(JSON.stringify(initialDailyOrders)));
+
+            // Fetch ordering notes for these dates
+            await fetchOrderingNotes(validDates);
         } catch (error) {
             console.error('Error fetching daily orders:', error);
         } finally {
             setLoading(false);
         }
+    };
+
+    // Fetch ordering notes for the given dates
+    const fetchOrderingNotes = async (dates) => {
+        if (dates.length === 0) return;
+        
+        setNotesLoading(true);
+        try {
+            const fromDate = dates[0];
+            const toDate = dates[dates.length - 1];
+            const response = await fetch(`/api/ordering_notes?from=${fromDate}&to=${toDate}`);
+            
+            if (response.ok) {
+                const notes = await response.json();
+                // Filter for unread notes only
+                const unreadNotes = notes.filter(note => !note.is_read);
+                setOrderingNotes(unreadNotes);
+            }
+        } catch (error) {
+            console.error('Error fetching ordering notes:', error);
+        } finally {
+            setNotesLoading(false);
+        }
+    };
+
+    // Mark note as read
+    const markNoteAsRead = async (noteId) => {
+        try {
+            const response = await fetch('/api/ordering_notes', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: noteId,
+                    is_read: true
+                }),
+            });
+
+            if (response.ok) {
+                // Remove the note from the list since it's now read
+                setOrderingNotes(prev => prev.filter(note => note.id !== noteId));
+            } else {
+                console.error('Failed to mark note as read');
+            }
+        } catch (error) {
+            console.error('Error marking note as read:', error);
+        }
+    };
+
+    // Get shop name by ID
+    const getShopName = (shopId) => {
+        const shop = shops.find(s => s.id === shopId);
+        return shop ? shop.name : 'Unknown Shop';
     };
 
     // Handle date change for Day 1 (auto-sets Days 2 and 3)
@@ -112,6 +174,10 @@ export default function Orders() {
             newDates[2] = nextDates[1];
         }
         setDates(newDates);
+        
+        // Clear existing notes when dates change
+        setOrderingNotes([]);
+        
         fetchDailyOrders(newDates, lotteryTypes, defaultQuantities);
     };
 
@@ -293,10 +359,65 @@ export default function Orders() {
                         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                 ) : (
-                    <div className="flex flex-wrap -mx-2">
-                        {renderTable('NLB')}
-                        {renderTable('DLB')}
-                    </div>
+                    <>
+                        {/* Ordering Notes Section */}
+                        {(orderingNotes.length > 0 || notesLoading) && (
+                            <div className="mb-6">
+                                <h2 className="text-lg font-semibold text-gray-800 mb-3">
+                                    Ordering Notes for Selected Dates
+                                </h2>
+                                {notesLoading ? (
+                                    <div className="flex justify-center items-center py-4">
+                                        <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {orderingNotes.map((note) => (
+                                            <div key={note.id} className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 shadow-sm">
+                                                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                                                                {getShopName(note.shop_id)}
+                                                            </span>
+                                                            <span className="text-gray-600 text-sm">
+                                                                {new Date(note.note_date).toLocaleDateString('en-US', { 
+                                                                    weekday: 'short', 
+                                                                    month: 'short', 
+                                                                    day: 'numeric' 
+                                                                })}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-gray-800 text-sm leading-relaxed break-words word-wrap overflow-wrap-anywhere">
+                                                            {note.message}
+                                                        </p>
+                                                        <p className="text-gray-500 text-xs mt-2">
+                                                            Created: {new Date(note.created_at).toLocaleDateString()}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => markNoteAsRead(note.id)}
+                                                        className="flex-shrink-0 bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200 flex items-center space-x-1 self-start sm:self-center"
+                                                    >
+                                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                        <span>Confirm</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        
+                        {/* Ordering Tables */}
+                        <div className="flex flex-wrap -mx-2">
+                            {renderTable('NLB')}
+                            {renderTable('DLB')}
+                        </div>
+                    </>
                 )}
             </div>
         </div>
