@@ -42,6 +42,9 @@ function LotteryRecordsContent() {
   const [dailyNote, setDailyNote] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [isEditingNote, setIsEditingNote] = useState(false);
+  const [isSavingProfit, setIsSavingProfit] = useState(false);
+  const [existingProfit, setExistingProfit] = useState(null);
+  const [isProfitSaved, setIsProfitSaved] = useState(false);
   const router = useRouter();
 
   const fetchLoanRecords = async (selectedDate) => {
@@ -179,7 +182,148 @@ function LotteryRecordsContent() {
     return parseFloat(value).toFixed(2);
   };
 
-  // Fetch daily note
+  // Calculate daily profit based on ticket price categories
+  const calculateDailyProfit = () => {
+    if (records.length === 0) return 0;
+
+    // Group records by price per ticket (same logic as in the UI)
+    const priceGroups = records.reduce((groups, record) => {
+      const pricePerTicket = record.total_worth / record.lottery_quantity;
+      if (!groups[pricePerTicket]) {
+        groups[pricePerTicket] = {
+          totalTickets: 0
+        };
+      }
+      groups[pricePerTicket].totalTickets += record.lottery_quantity;
+      return groups;
+    }, {});
+
+    // Calculate profit: (ticket_price - 32.50) * ticket_count for each category
+    let totalProfit = 0;
+    Object.entries(priceGroups).forEach(([price, data]) => {
+      const ticketPrice = Number(price);
+      const profitPerTicket = ticketPrice - 32.50;
+      const categoryProfit = profitPerTicket * data.totalTickets;
+      totalProfit += categoryProfit;
+    });
+
+    return Math.round(totalProfit); // Round to nearest whole number since profit is stored as int
+  };
+
+  // Save daily profit to API
+  const handleSaveProfit = async () => {
+    setIsSavingProfit(true);
+    
+    try {
+      const profitAmount = calculateDailyProfit();
+      
+      const res = await fetch('/api/daily_profit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date: date,
+          profit: profitAmount
+        })
+      });
+
+      if (res.ok) {
+        alert(`Daily profit saved successfully! Profit: Rs. ${formatCurrency(profitAmount)}`);
+        setExistingProfit(profitAmount);
+        setIsProfitSaved(true);
+      } else {
+        const errorData = await res.json();
+        if (res.status === 409) {
+          // Record already exists, try to update it
+          const updateRes = await fetch('/api/daily_profit', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              date: date,
+              profit: profitAmount
+            })
+          });
+
+          if (updateRes.ok) {
+            alert(`Daily profit updated successfully! Profit: Rs. ${formatCurrency(profitAmount)}`);
+            setExistingProfit(profitAmount);
+            setIsProfitSaved(true);
+          } else {
+            throw new Error('Failed to update profit record');
+          }
+        } else {
+          throw new Error(errorData.error || 'Failed to save profit');
+        }
+      }
+    } catch (error) {
+      console.error('Error saving daily profit:', error);
+      alert(`Error saving daily profit: ${error.message}`);
+    } finally {
+      setIsSavingProfit(false);
+    }
+  };
+
+  // Update existing profit record
+  const handleUpdateProfit = async () => {
+    setIsSavingProfit(true);
+    
+    try {
+      const profitAmount = calculateDailyProfit();
+      
+      const res = await fetch('/api/daily_profit', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date: date,
+          profit: profitAmount
+        })
+      });
+
+      if (res.ok) {
+        alert(`Daily profit updated successfully! New Profit: Rs. ${formatCurrency(profitAmount)}`);
+        setExistingProfit(profitAmount);
+      } else {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update profit');
+      }
+    } catch (error) {
+      console.error('Error updating daily profit:', error);
+      alert(`Error updating daily profit: ${error.message}`);
+    } finally {
+      setIsSavingProfit(false);
+    }
+  };
+
+  // Fetch existing profit for the selected date
+  const fetchExistingProfit = async (selectedDate) => {
+    try {
+      const res = await fetch(`/api/daily_profit?date=${selectedDate}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.length > 0) {
+          setExistingProfit(data[0].profit);
+          setIsProfitSaved(true);
+        } else {
+          setExistingProfit(null);
+          setIsProfitSaved(false);
+        }
+      } else {
+        setExistingProfit(null);
+        setIsProfitSaved(false);
+      }
+    } catch (error) {
+      console.error('Error fetching existing profit:', error);
+      setExistingProfit(null);
+      setIsProfitSaved(false);
+    }
+  };
+
+  // Fetch daily note and profit
   useEffect(() => {
     const fetchDailyNote = async () => {
       try {
@@ -195,6 +339,7 @@ function LotteryRecordsContent() {
 
     if (date) {
       fetchDailyNote();
+      fetchExistingProfit(date);
     }
   }, [date]);
 
@@ -391,6 +536,121 @@ function LotteryRecordsContent() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Save Profit Section */}
+        <div className="mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex flex-col gap-2">
+                <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                  </svg>
+                  Daily Profit
+                  {isProfitSaved && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                      Saved
+                    </span>
+                  )}
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Calculate and save profit based on ticket categories (Price - Rs. 32.50) × Quantity
+                </p>
+                {records.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-green-700">
+                      Current Calculated Profit: Rs. {formatCurrency(calculateDailyProfit())}
+                    </p>
+                    {isProfitSaved && existingProfit !== null && (
+                      <p className="text-sm text-gray-600">
+                        Saved Profit: Rs. {formatCurrency(existingProfit)}
+                        {calculateDailyProfit() !== existingProfit && (
+                          <span className="ml-2 text-orange-600 font-medium">
+                            (Different from current calculation)
+                          </span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {!isProfitSaved ? (
+                  <button
+                    onClick={handleSaveProfit}
+                    disabled={isSavingProfit || records.length === 0}
+                    className={`${
+                      isSavingProfit || records.length === 0
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-green-600 hover:bg-green-700'
+                    } transition-colors text-white font-medium py-2.5 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 shadow-sm flex items-center gap-2`}
+                  >
+                    {isSavingProfit ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                        </svg>
+                        Save Profit
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleUpdateProfit}
+                      disabled={isSavingProfit || records.length === 0}
+                      className={`${
+                        isSavingProfit || records.length === 0
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      } transition-colors text-white font-medium py-2.5 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 shadow-sm flex items-center gap-2`}
+                    >
+                      {isSavingProfit ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Updating...
+                        </>
+                      ) : (
+                        <>
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Update Profit
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsProfitSaved(false);
+                        setExistingProfit(null);
+                      }}
+                      className="bg-gray-500 hover:bg-gray-600 transition-colors text-white font-medium py-2.5 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400 shadow-sm flex items-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Reset
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Shops Section */}
