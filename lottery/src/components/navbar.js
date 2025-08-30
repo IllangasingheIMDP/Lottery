@@ -66,6 +66,7 @@ export default function Header() {
     { name: 'Ordering details', href: '/ordering-details' },
     { name: 'Ordering Notes', href: '/ordering_notes' },
     { name: 'Orders', href: '/orders' },
+    { name: 'Profit Statistics', href: '/profit-statistics' },
   ];
 
   return (
