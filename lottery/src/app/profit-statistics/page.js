@@ -11,7 +11,7 @@ export default function ProfitStatistics() {
 
   // Filter states
   const [dateFilter, setDateFilter] = useState({
-    type: 'all', // 'all', 'today', 'week', 'month', 'year', 'custom'
+    type: 'today', // 'all', 'today', 'week', 'month', 'year', 'custom'
     from: '',
     to: ''
   });
@@ -22,7 +22,11 @@ export default function ProfitStatistics() {
   // Statistics states
   const [statistics, setStatistics] = useState({
     totalProfit: 0,
+    totalKumaraProfit: 0,
+    totalManagerProfit: 0,
     averageProfit: 0,
+    averageKumaraProfit: 0,
+    averageManagerProfit: 0,
     highestProfit: 0,
     lowestProfit: 0,
     totalDays: 0,
@@ -67,7 +71,7 @@ export default function ProfitStatistics() {
       }
 
       let data = await response.json();
-      
+      console.log(data);
       // Sort data
       data.sort((a, b) => {
         if (sortBy === 'date') {
@@ -75,7 +79,7 @@ export default function ProfitStatistics() {
           const dateB = new Date(b.date);
           return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
         } else {
-          return sortOrder === 'asc' ? a.profit - b.profit : b.profit - a.profit;
+          return sortOrder === 'asc' ? a.total_profit - b.total_profit : b.total_profit - a.total_profit;
         }
       });
 
@@ -105,16 +109,24 @@ export default function ProfitStatistics() {
       return;
     }
 
-    const totalProfit = data.reduce((sum, item) => sum + item.profit, 0);
+    const totalKumaraProfit = data.reduce((sum, item) => sum + item.kumara_profit, 0);
+    const totalManagerProfit = data.reduce((sum, item) => sum + item.manager_profit, 0);
+    const totalProfit = data.reduce((sum, item) => sum + item.total_profit, 0);
+    const averageKumaraProfit = totalKumaraProfit / data.length;
+    const averageManagerProfit = totalManagerProfit / data.length;
     const averageProfit = totalProfit / data.length;
-    const profits = data.map(item => item.profit);
+    const profits = data.map(item => item.total_profit);
     const highestProfit = Math.max(...profits);
     const lowestProfit = Math.min(...profits);
-    const profitableDays = data.filter(item => item.profit > 0).length;
-    const lossdays = data.filter(item => item.profit < 0).length;
+    const profitableDays = data.filter(item => item.total_profit > 0).length;
+    const lossdays = data.filter(item => item.total_profit < 0).length;
 
     setStatistics({
+      totalKumaraProfit,
+      totalManagerProfit,
       totalProfit,
+      averageKumaraProfit,
+      averageManagerProfit,
       averageProfit,
       highestProfit,
       lowestProfit,
@@ -128,7 +140,12 @@ export default function ProfitStatistics() {
   const prepareChartData = (data) => {
     // Sort by date for chart
     const sortedData = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
-    setChartData(sortedData);
+    // Make sure each item has the correct field name for charts
+    const chartReadyData = sortedData.map(item => ({
+      ...item,
+      profit: item.total_profit // Map total_profit to profit for chart compatibility
+    }));
+    setChartData(chartReadyData);
   };
 
   // Format currency
@@ -323,14 +340,14 @@ export default function ProfitStatistics() {
               <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
                 <div className="flex items-center">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-800">Average Daily</h3>
-                    <p className={`text-2xl font-bold ${statistics.averageProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                      Rs. {formatCurrency(statistics.averageProfit)}
+                    <h3 className="text-lg font-semibold text-gray-800">Kumara&apos;s Total</h3>
+                    <p className={`text-2xl font-bold ${statistics.totalKumaraProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                      Rs. {formatCurrency(statistics.totalKumaraProfit)}
                     </p>
                   </div>
                   <div className="bg-blue-100 rounded-full p-3">
                     <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
                 </div>
@@ -339,14 +356,14 @@ export default function ProfitStatistics() {
               <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
                 <div className="flex items-center">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-800">Highest Profit</h3>
-                    <p className="text-2xl font-bold text-purple-600">
-                      Rs. {formatCurrency(statistics.highestProfit)}
+                    <h3 className="text-lg font-semibold text-gray-800">Manager&apos;s Total</h3>
+                    <p className={`text-2xl font-bold ${statistics.totalManagerProfit >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
+                      Rs. {formatCurrency(statistics.totalManagerProfit)}
                     </p>
                   </div>
                   <div className="bg-purple-100 rounded-full p-3">
                     <svg className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
                 </div>
@@ -355,14 +372,66 @@ export default function ProfitStatistics() {
               <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
                 <div className="flex items-center">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-800">Total Days</h3>
-                    <p className="text-2xl font-bold text-orange-600">{statistics.totalDays}</p>
+                    <h3 className="text-lg font-semibold text-gray-800">Average Daily</h3>
+                    <p className={`text-2xl font-bold ${statistics.averageProfit >= 0 ? 'text-orange-600' : 'text-red-600'}`}>
+                      Rs. {formatCurrency(statistics.averageProfit)}
+                    </p>
                     <p className="text-sm text-gray-500">
-                      Profitable: {statistics.profitableDays} | Loss: {statistics.lossdays}
+                      Total Days: {statistics.totalDays}
                     </p>
                   </div>
                   <div className="bg-orange-100 rounded-full p-3">
                     <svg className="h-6 w-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Statistics Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-indigo-500">
+                <div className="flex items-center">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-800">Highest Daily Profit</h3>
+                    <p className="text-2xl font-bold text-indigo-600">
+                      Rs. {formatCurrency(statistics.highestProfit)}
+                    </p>
+                  </div>
+                  <div className="bg-indigo-100 rounded-full p-3">
+                    <svg className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
+                <div className="flex items-center">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-800">Lowest Daily Profit</h3>
+                    <p className="text-2xl font-bold text-red-600">
+                      Rs. {formatCurrency(statistics.lowestProfit)}
+                    </p>
+                  </div>
+                  <div className="bg-red-100 rounded-full p-3">
+                    <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-teal-500">
+                <div className="flex items-center">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-800">Performance</h3>
+                    <p className="text-sm text-gray-600">Profitable Days: <span className="font-bold text-green-600">{statistics.profitableDays}</span></p>
+                    <p className="text-sm text-gray-600">Loss Days: <span className="font-bold text-red-600">{statistics.lossdays}</span></p>
+                  </div>
+                  <div className="bg-teal-100 rounded-full p-3">
+                    <svg className="h-6 w-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
@@ -429,7 +498,13 @@ export default function ProfitStatistics() {
                           Date
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Profit Amount
+                          Kumara&apos;s Profit
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Manager&apos;s Profit
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Total Profit
                         </th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
@@ -443,17 +518,27 @@ export default function ProfitStatistics() {
                             {formatDate(profit.date)}
                           </td>
                           <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
-                            profit.profit >= 0 ? 'text-green-600' : 'text-red-600'
+                            profit.kumara_profit >= 0 ? 'text-blue-600' : 'text-red-600'
                           }`}>
-                            Rs. {formatCurrency(profit.profit)}
+                            Rs. {formatCurrency(profit.kumara_profit)}
+                          </td>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
+                            profit.manager_profit >= 0 ? 'text-purple-600' : 'text-red-600'
+                          }`}>
+                            Rs. {formatCurrency(profit.manager_profit)}
+                          </td>
+                          <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
+                            profit.total_profit >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            Rs. {formatCurrency(profit.total_profit)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              profit.profit >= 0 
+                              profit.total_profit >= 0 
                                 ? 'bg-green-100 text-green-800' 
                                 : 'bg-red-100 text-red-800'
                             }`}>
-                              {profit.profit >= 0 ? 'Profit' : 'Loss'}
+                              {profit.total_profit >= 0 ? 'Profit' : 'Loss'}
                             </span>
                           </td>
                         </tr>

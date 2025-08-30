@@ -42,7 +42,9 @@ export async function GET(req) {
 			SELECT 
 				id,
 				DATE_FORMAT(date, '%Y-%m-%d') AS date,
-				profit
+				kumara_profit,
+				manager_profit,
+				(kumara_profit + manager_profit) AS total_profit
 			FROM daily_profit
 			${where.length ? 'WHERE ' + where.join(' AND ') : ''}
 			ORDER BY date DESC, id DESC
@@ -66,19 +68,26 @@ export async function POST(req) {
 	}
 
 	try {
-		const { date, profit } = await req.json();
+		const { date, kumara_profit, manager_profit } = await req.json();
 
-		if (!date || profit === undefined || profit === null) {
+		if (!date || kumara_profit === undefined || kumara_profit === null || manager_profit === undefined || manager_profit === null) {
 			return new Response(
-				JSON.stringify({ error: 'date and profit are required' }),
+				JSON.stringify({ error: 'date, kumara_profit, and manager_profit are required' }),
 				{ status: 400 }
 			);
 		}
 
-		// Validate profit is a number
-		if (typeof profit !== 'number' || !Number.isInteger(profit)) {
+		// Validate profits are numbers
+		if (typeof kumara_profit !== 'number' || !Number.isInteger(kumara_profit)) {
 			return new Response(
-				JSON.stringify({ error: 'profit must be an integer' }),
+				JSON.stringify({ error: 'kumara_profit must be an integer' }),
+				{ status: 400 }
+			);
+		}
+
+		if (typeof manager_profit !== 'number' || !Number.isInteger(manager_profit)) {
+			return new Response(
+				JSON.stringify({ error: 'manager_profit must be an integer' }),
 				{ status: 400 }
 			);
 		}
@@ -89,23 +98,25 @@ export async function POST(req) {
 
 		if (existingRecords.length > 0) {
 			// Record exists, update it instead
-			const updateSql = 'UPDATE daily_profit SET profit = ? WHERE date = ?';
-			await db.query(updateSql, [profit, date]);
+			const updateSql = 'UPDATE daily_profit SET kumara_profit = ?, manager_profit = ? WHERE date = ?';
+			await db.query(updateSql, [kumara_profit, manager_profit, date]);
 			return new Response(
 				JSON.stringify({ 
 					message: 'Daily profit record updated successfully (existing date found)',
-					action: 'updated'
+					action: 'updated',
+					total_profit: kumara_profit + manager_profit
 				}), 
 				{ status: 200 }
 			);
 		} else {
 			// No existing record, create new one
-			const insertSql = 'INSERT INTO daily_profit (date, profit) VALUES (?, ?)';
-			await db.query(insertSql, [date, profit]);
+			const insertSql = 'INSERT INTO daily_profit (date, kumara_profit, manager_profit) VALUES (?, ?, ?)';
+			await db.query(insertSql, [date, kumara_profit, manager_profit]);
 			return new Response(
 				JSON.stringify({ 
 					message: 'Daily profit record created successfully',
-					action: 'created'
+					action: 'created',
+					total_profit: kumara_profit + manager_profit
 				}), 
 				{ status: 201 }
 			);
@@ -124,27 +135,34 @@ export async function PUT(req) {
 	}
 
 	try {
-		const { id, date, profit } = await req.json();
+		const { id, date, kumara_profit, manager_profit } = await req.json();
 		
-		if (profit === undefined || profit === null) {
-			return new Response(JSON.stringify({ error: 'profit is required' }), { status: 400 });
+		if (kumara_profit === undefined || kumara_profit === null || manager_profit === undefined || manager_profit === null) {
+			return new Response(JSON.stringify({ error: 'kumara_profit and manager_profit are required' }), { status: 400 });
 		}
 
-		// Validate profit is a number
-		if (typeof profit !== 'number' || !Number.isInteger(profit)) {
+		// Validate profits are numbers
+		if (typeof kumara_profit !== 'number' || !Number.isInteger(kumara_profit)) {
 			return new Response(
-				JSON.stringify({ error: 'profit must be an integer' }),
+				JSON.stringify({ error: 'kumara_profit must be an integer' }),
+				{ status: 400 }
+			);
+		}
+
+		if (typeof manager_profit !== 'number' || !Number.isInteger(manager_profit)) {
+			return new Response(
+				JSON.stringify({ error: 'manager_profit must be an integer' }),
 				{ status: 400 }
 			);
 		}
 
 		let sql, params;
 		if (id) {
-			sql = 'UPDATE daily_profit SET date = COALESCE(?, date), profit = ? WHERE id = ?';
-			params = [date ?? null, profit, id];
+			sql = 'UPDATE daily_profit SET date = COALESCE(?, date), kumara_profit = ?, manager_profit = ? WHERE id = ?';
+			params = [date ?? null, kumara_profit, manager_profit, id];
 		} else if (date) {
-			sql = 'UPDATE daily_profit SET profit = ? WHERE date = ?';
-			params = [profit, date];
+			sql = 'UPDATE daily_profit SET kumara_profit = ?, manager_profit = ? WHERE date = ?';
+			params = [kumara_profit, manager_profit, date];
 		} else {
 			return new Response(
 				JSON.stringify({ error: 'Provide either id or date' }),
@@ -156,7 +174,10 @@ export async function PUT(req) {
 		if (result.affectedRows === 0) {
 			return new Response(JSON.stringify({ error: 'Daily profit record not found' }), { status: 404 });
 		}
-		return new Response(JSON.stringify({ message: 'Daily profit record updated successfully' }), { status: 200 });
+		return new Response(JSON.stringify({ 
+			message: 'Daily profit record updated successfully',
+			total_profit: kumara_profit + manager_profit
+		}), { status: 200 });
 	} catch (error) {
 		// Handle unique key conflict when changing date
 		if (error && error.code === 'ER_DUP_ENTRY') {
