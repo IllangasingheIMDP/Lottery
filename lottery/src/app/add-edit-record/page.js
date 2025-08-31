@@ -521,7 +521,7 @@ function Step2({ initialData, onSubmit, loading }) {
     <Suspense fallback={<div>Loading...</div>}>
       <div className="space-y-6">
         {/* Loan Balance and Submission Section */}
-        <div className="bg-gray-50 p-4 rounded-md space-y-4">
+        {/*<div className="bg-gray-50 p-4 rounded-md space-y-4">
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium text-gray-500">ණය ශේෂය:</span>
             <span className="text-lg font-bold text-red-600">
@@ -558,7 +558,7 @@ function Step2({ initialData, onSubmit, loading }) {
               {loadingLoan ? 'Submitting...' : 'Submit Loan'}
             </button>
           </form>
-        </div>
+        </div> */}
 
         {/* Existing Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
