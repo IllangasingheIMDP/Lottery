@@ -19,7 +19,7 @@ const parseTicketData = (value) => {
   }
   return {};
 };
-export default function ViewRecord() {
+function ViewRecordContent() {
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -64,33 +64,29 @@ export default function ViewRecord() {
 
   if (loading) {
     return (
-      <Suspense fallback={<div>Loading...</div>}>
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
       </div>
-      </Suspense>
     );
   }
 
   if (!record) {
     return (
-      <Suspense fallback={<div>Loading...</div>}>
       <div className="max-w-4xl mx-auto mt-16 px-4">
         <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow">
           <p className="text-red-700">වාර්තාව හමු නොවීය. කරුණාකර සාප්පු හැඳුනුම්පත සහ දිනය පරීක්ෂා කරන්න.</p>
           <button
-            onClick={() => router.push('/lottery-records?date=' + date)}  
+            onClick={() => router.push('/lottery-records?date=' + date)}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >
             Back to Records
           </button>
         </div>
       </div>
-      </Suspense>
     );
   }
 
-  return (<Suspense fallback={<div>Loading...</div>}>
+  return (
     <div className="min-h-screen bg-gray-100">
       <Header />
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -322,6 +318,13 @@ export default function ViewRecord() {
       </div>
     </div>
   </div>
-  </Suspense>
+  );
+}
+
+export default function ViewRecord() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen">Loading...</div>}>
+      <ViewRecordContent />
+    </Suspense>
   );
 }
