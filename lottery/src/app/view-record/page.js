@@ -3,13 +3,29 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/navbar';
 import { Suspense } from 'react';
-export default function ViewRecord({searchParams}) {
+
+const parseTicketData = (value) => {
+  if (!value) return {};
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch (err) {
+      console.error('Failed to parse ticket data', err);
+      return {};
+    }
+  }
+  if (typeof value === 'object') {
+    return value;
+  }
+  return {};
+};
+function ViewRecordContent() {
   const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  //const searchParams = useSearchParams();
-  const shopId = searchParams.shopId;
-  const date = searchParams.date;
+  const searchParams = useSearchParams();
+  const shopId = searchParams.get('shopId');
+  const date = searchParams.get('date');
 
   useEffect(() => {
     if (shopId && date) {
@@ -42,35 +58,35 @@ export default function ViewRecord({searchParams}) {
     return `Rs. ${parseFloat(amount).toFixed(2)}`;
   };
 
+  const nlbData = parseTicketData(record?.nlb);
+  const dlbData = parseTicketData(record?.dlb);
+  const faultyData = parseTicketData(record?.faulty);
+
   if (loading) {
     return (
-      <Suspense fallback={<div>Loading...</div>}>
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600"></div>
       </div>
-      </Suspense>
     );
   }
 
   if (!record) {
     return (
-      <Suspense fallback={<div>Loading...</div>}>
       <div className="max-w-4xl mx-auto mt-16 px-4">
         <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded shadow">
           <p className="text-red-700">වාර්තාව හමු නොවීය. කරුණාකර සාප්පු හැඳුනුම්පත සහ දිනය පරීක්ෂා කරන්න.</p>
           <button
-            onClick={() => router.push('/lottery-records?date=' + date)}  
+            onClick={() => router.push('/lottery-records?date=' + date)}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
           >
             Back to Records
           </button>
         </div>
       </div>
-      </Suspense>
     );
   }
 
-  return (<Suspense fallback={<div>Loading...</div>}>
+  return (
     <div className="min-h-screen bg-gray-100">
       <Header />
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -186,10 +202,7 @@ export default function ViewRecord({searchParams}) {
                 <span className="text-gray-600">මුළු DLB මිල:</span>
                 <span className="font-medium">{formatCurrency(record.dlb_total_price)}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">ගැලපීම:</span>
-                <span className={`font-bold ${record.equality_check ? 'text-green-700' : 'text-red-500' }`}>{record.equality_check ? "ටිකට් මුදල් ගැලපේ":"ටිකට් පත නොගැලපේ."}</span>
-              </div>
+              
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">මුළු ලැබුණු මිල:</span>
                 <span className="font-medium text-purple-600">{formatCurrency(Number(record.got_tickets_total_price) + Number(record.cash_given))}</span>
@@ -204,9 +217,9 @@ export default function ViewRecord({searchParams}) {
             <h2 className="text-lg font-semibold text-gray-800">NLB විශ්ලේෂණය</h2>
           </div>
           <div className="p-4">
-            {Object.keys(record.nlb).length > 0 ? (
+            {Object.keys(nlbData).length > 0 ? (
               <div className="space-y-3">
-                {Object.entries(record.nlb).map(([price, quantity]) => (
+                {Object.entries(nlbData).map(([price, quantity]) => (
                   <div key={price} className="flex justify-between items-center border-b border-gray-100 pb-2">
                     <span className="text-gray-600">Rs. {price} Ticket:</span>
                     <span className="font-medium">{quantity} pcs</span>
@@ -229,9 +242,9 @@ export default function ViewRecord({searchParams}) {
             <h2 className="text-lg font-semibold text-gray-800">DLB විශ්ලේෂණය</h2>
           </div>
           <div className="p-4">
-            {Object.keys(record.dlb).some(key => record.dlb[key] > 0) ? (
+            {Object.keys(dlbData).some(key => dlbData[key] > 0) ? (
               <div className="space-y-3">
-                {Object.entries(record.dlb).map(([price, quantity]) => (
+                {Object.entries(dlbData).map(([price, quantity]) => (
                   <div key={price} className="flex justify-between items-center border-b border-gray-100 pb-2">
                     <span className="text-gray-600">Rs. {price} Ticket:</span>
                     <span className="font-medium">{quantity} pcs</span>
@@ -254,9 +267,9 @@ export default function ViewRecord({searchParams}) {
             <h2 className="text-lg font-semibold text-gray-800">දෝෂ සහිත ටිකට්පත්</h2>
           </div>
           <div className="p-4">
-            {Object.keys(record.faulty).some(key => record.faulty[key] > 0) ? (
+            {Object.keys(faultyData).some(key => faultyData[key] > 0) ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {Object.entries(record.faulty).map(([price, quantity]) => (
+                {Object.entries(faultyData).map(([price, quantity]) => (
                   <div key={price} className="bg-gray-50 p-3 rounded">
                     <div className="text-gray-600">Rs. {price} Ticket:</div>
                     <div className="font-medium">{quantity} pcs</div>
@@ -305,6 +318,13 @@ export default function ViewRecord({searchParams}) {
       </div>
     </div>
   </div>
-  </Suspense>
+  );
+}
+
+export default function ViewRecord() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center h-screen">Loading...</div>}>
+      <ViewRecordContent />
+    </Suspense>
   );
 }

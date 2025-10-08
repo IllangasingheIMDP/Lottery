@@ -885,12 +885,9 @@ function LotteryRecordsContent() {
                   <th className="py-2 px-4 text-right">ටිකට් ගණන</th>
                   <th className="py-2 px-4 text-right">දී ඇති ටිකට්වල මුළු වටිනාකම</th>
                   <th className="py-2 px-4 text-right">මුදලින් ලැබුණු මුදල</th>
-                  <th className="py-2 px-4 text-right">NLB ටිකට් ගණන </th>
-                  <th className="py-2 px-4 text-right">NLB මුදල</th>
-                  <th className="py-2 px-4 text-right">DLB ටිකට් ගණන </th>
-                  <th className="py-2 px-4 text-right">DLB මුදල</th>
+                 
                   <th className="py-2 px-4 text-right">ටිකට්පත් මගින් ලැබුණු මුදල</th>
-                  <th className="py-2 px-4 text-right">දෝෂ සහිත අගය</th>
+                  
                   <th className="py-2 px-4 text-right">මුළු මුදල ගැලපීම</th>
                   <th className="py-2 px-4 text-center">Process Status</th>
                 </tr>
@@ -904,13 +901,11 @@ function LotteryRecordsContent() {
                       <td className="py-2 px-4 text-right">{record.lottery_quantity}</td>
                       <td className="py-2 px-4 text-right">Rs. {formatCurrency(record.total_worth)}</td>
                       <td className="py-2 px-4 text-right">Rs. {formatCurrency(record.cash_given)}</td>
-                      <td className="py-2 px-4 text-right">{record.nlb_quantity}</td>
-                      <td className="py-2 px-4 text-right">Rs. {formatCurrency(record.nlb_total_price)}</td>
-                      <td className="py-2 px-4 text-right">{record.dlb_quantity}</td>
-                      <td className="py-2 px-4 text-right">Rs. {formatCurrency(record.dlb_total_price)}</td>
+                      
+                      
                       <td className="py-2 px-4 text-right">Rs. {formatCurrency(record.got_tickets_total_price)}</td>
-                      <td className="py-2 px-4 text-right">Rs. {formatCurrency(record.faulty_total_price)}</td>
-                      <td className="py-2 px-4 text-center">{Number(record.total_worth) == (Number(record.cash_given) + Number(record.nlb_total_price) + Number(record.dlb_total_price) + Number(record.faulty_total_price)) ? <p className='text-green-600'>Yes</p> : <p className='text-red-600'>{Number(record.total_worth) - (Number(record.cash_given) + Number(record.nlb_total_price) + Number(record.dlb_total_price) + Number(record.faulty_total_price))}</p>}</td>
+                      
+                      <td className="py-2 px-4 text-center">{Number(record.total_worth) == (Number(record.cash_given) + Number(record.got_tickets_total_price)) ? <p className='text-green-600'>Yes</p> : <p className='text-red-600'>{Number(record.total_worth) - (Number(record.cash_given) + Number(record.nlb_total_price) + Number(record.dlb_total_price) + Number(record.faulty_total_price))}</p>}</td>
                       <td className="py-2 px-4 text-center">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${record.completed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                           {record.completed ? 'Completed' : 'Pending'}

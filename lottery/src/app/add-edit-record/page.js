@@ -13,6 +13,23 @@ function AddEditRecordContent() {
   const router = useRouter();
   //const searchParams = useSearchParams();
   const searchParams = useSearchParams();
+  const visibleSteps = [1, 2, 6];
+
+  const getNextStep = (currentStep) => {
+    const currentIndex = visibleSteps.indexOf(currentStep);
+    if (currentIndex !== -1 && currentIndex < visibleSteps.length - 1) {
+      return visibleSteps[currentIndex + 1];
+    }
+    return currentStep;
+  };
+
+  const getPreviousStep = (currentStep) => {
+    const currentIndex = visibleSteps.indexOf(currentStep);
+    if (currentIndex > 0) {
+      return visibleSteps[currentIndex - 1];
+    }
+    return currentStep;
+  };
 
   const shopId = searchParams.get('shopId');
   const date = searchParams.get('date');
@@ -108,9 +125,10 @@ function AddEditRecordContent() {
         if (!res.ok) throw new Error('Failed to save step');
       }
 
-      setData({ ...data, ...stepData });
-      if (step < 6) setStep(step + 1);
-      else router.push('/lottery-records?date=' + date);
+  setData({ ...data, ...stepData });
+  const nextStep = getNextStep(step);
+  if (nextStep !== step) setStep(nextStep);
+  else router.push('/lottery-records?date=' + date);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -119,7 +137,8 @@ function AddEditRecordContent() {
   };
 
   const handleGoFront = () => {
-    if (step < 6) setStep(step + 1);
+    const nextStep = getNextStep(step);
+    if (nextStep !== step) setStep(nextStep);
   }
 
   const handleSubmitStep4 = async (stepData) => {
@@ -168,7 +187,8 @@ function AddEditRecordContent() {
   };
 
   const handleBack = () => {
-    if (step > 1) setStep(step - 1);
+    const previousStep = getPreviousStep(step);
+    if (previousStep !== step) setStep(previousStep);
   };
   const goBack = () => {
     if (step == 4) setStep(2);
