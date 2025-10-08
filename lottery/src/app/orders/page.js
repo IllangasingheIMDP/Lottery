@@ -75,12 +75,13 @@ export default function Orders() {
     // Fetch daily orders when dates are set
     const fetchDailyOrders = async (newDates, lotteryTypesData, defaultQuantitiesData) => {
         const validDates = newDates.filter(date => date !== '');
+        console.log('Fetching orders for dates:', validDates);
         if (validDates.length === 0) return;
         
         setLoading(true);
         try {
             const dailyOrdersRes = await fetch(`/api/daily_orders?dates=${validDates.join(',')}`).then(res => res.json());
-    
+            console.log('Daily orders response:', dailyOrdersRes);
             // Normalize the keys in dailyOrdersRes to yyyy-mm-dd format
             const normalizedDailyOrders = {};
             Object.keys(dailyOrdersRes).forEach(dateStr => {
@@ -94,7 +95,7 @@ export default function Orders() {
                 if (date) {
                     initialDailyOrders[date] = {};
                     lotteryTypesData.forEach(lt => {
-                        initialDailyOrders[date][lt.id] = normalizedDailyOrders[date]?.[lt.id] || defaultQuantitiesData[lt.id] || 0;
+                        initialDailyOrders[date][lt.id] = normalizedDailyOrders[date]?.[lt.id] || 0;
                     });
                 }
             });
