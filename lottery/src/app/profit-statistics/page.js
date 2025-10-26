@@ -319,6 +319,7 @@ export default function ProfitStatistics() {
                 <input
                   type="date"
                   value={dateFilter.from}
+                  min="2025-09-21"
                   onChange={(e) => handleCustomDateChange('from', e.target.value)}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -328,6 +329,7 @@ export default function ProfitStatistics() {
                 <input
                   type="date"
                   value={dateFilter.to}
+                  min="2025-09-21"
                   onChange={(e) => handleCustomDateChange('to', e.target.value)}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
