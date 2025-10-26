@@ -261,7 +261,7 @@ export default function ProfitStatistics() {
                 <option value="today">Today</option>
                 <option value="week">Last 7 Days</option>
                 <option value="month">Last Month</option>
-                <option value="year">Last Year</option>
+                
                 <option value="custom">Custom Range</option>
               </select>
             </div>
