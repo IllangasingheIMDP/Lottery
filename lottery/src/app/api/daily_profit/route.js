@@ -6,7 +6,6 @@ import { authenticate } from '@/lib/auth';
 // - id: number (fetch single by id)
 // - date: YYYY-MM-DD (exact date)
 // - from, to: YYYY-MM-DD (date range)
-// - limit: number (defaults 200)
 export async function GET(req) {
 	try {
 		const { searchParams } = new URL(req.url);
@@ -14,7 +13,6 @@ export async function GET(req) {
 		const date = searchParams.get('date');
 		const from = searchParams.get('from');
 		const to = searchParams.get('to');
-		const limit = Math.min(parseInt(searchParams.get('limit') || '200', 10), 1000);
 
 		const where = [];
 		const params = [];
@@ -48,7 +46,6 @@ export async function GET(req) {
 			FROM daily_profit
 			${where.length ? 'WHERE ' + where.join(' AND ') : ''}
 			ORDER BY date DESC, id DESC
-			LIMIT ${Number.isFinite(limit) ? limit : 200}
 		`;
 
 		const [rows] = await db.query(sql, params);
