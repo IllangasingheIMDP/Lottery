@@ -3,7 +3,7 @@ import { authenticate } from '@/lib/auth';
 import db from '@/lib/db';
 
 export async function GET(req) {
-  const auth = authenticate(req,['samarakoonkumara@gmail.com','a@gmail.com']);
+  const auth = authenticate(req,['samarakoonkumara@gmail.com']);
   if (auth.error) {
     return new Response(JSON.stringify({ error: auth.error }), { status: auth.status });
   }
