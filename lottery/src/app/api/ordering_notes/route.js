@@ -189,7 +189,7 @@ export async function DELETE(req) {
 
 // PATCH - Mark note as read/unread (authenticated users)
 export async function PATCH(req) {
-	const auth = authenticate(req, ['samarakoonkumara@gmail.com', 'a@gmail.com']);
+	const auth = authenticate(req, ['samarakoonkumara@gmail.com']);
 	if (auth.error) {
 		return new Response(JSON.stringify({ error: auth.error }), { status: auth.status });
 	}

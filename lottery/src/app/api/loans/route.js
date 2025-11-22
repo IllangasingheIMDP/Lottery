@@ -2,7 +2,7 @@ import db from '@/lib/db';
 import { authenticate } from '@/lib/auth';
 
 export async function GET(req) {
-    const auth = authenticate(req, ['samarakoonkumara@gmail.com', 'a@gmail.com']);
+    const auth = authenticate(req, ['samarakoonkumara@gmail.com']);
     if (auth.error) {
         return new Response(
             JSON.stringify({ error: auth.error }),
@@ -190,7 +190,7 @@ export async function POST(req) {
 
 // Add this new function after the existing POST function
 export async function GET_LOAN_RECORDS(req) {
-    const auth = authenticate(req, ['samarakoonkumara@gmail.com', 'a@gmail.com']);
+    const auth = authenticate(req, ['samarakoonkumara@gmail.com']);
     if (auth.error) {
         return new Response(
             JSON.stringify({ error: auth.error }),

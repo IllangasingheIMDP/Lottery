@@ -3,7 +3,7 @@ import { authenticate } from '@/lib/auth';
 
 // GET - Retrieve note for a specific date
 export async function GET(req) {
-    const auth = authenticate(req, ['samarakoonkumara@gmail.com', 'a@gmail.com']);
+    const auth = authenticate(req, ['samarakoonkumara@gmail.com']);
     if (auth.error) {
         return new Response(
             JSON.stringify({ error: auth.error }),
