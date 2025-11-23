@@ -99,6 +99,22 @@ export default function Orders() {
                     });
                 }
             });
+
+            // Fetch distribution totals to use as fallback where no order exists
+            const distTotalsRes = await fetch(`/api/distribution_totals?dates=${validDates.join(',')}`).then(r => r.ok ? r.json() : null);
+            if (distTotalsRes && distTotalsRes.dates) {
+                validDates.forEach(date => {
+                    const distForDate = distTotalsRes.dates[date];
+                    if (!distForDate) return;
+                    distForDate.lottery_totals.forEach(lot => {
+                        // Only override if original order missing (undefined) not if explicitly zero present in normalizedDailyOrders
+                        const hasOriginal = normalizedDailyOrders[date] && Object.prototype.hasOwnProperty.call(normalizedDailyOrders[date], lot.lottery_id);
+                        if (!hasOriginal) {
+                            initialDailyOrders[date][lot.lottery_id] = lot.quantity;
+                        }
+                    });
+                });
+            }
             setDailyOrders(initialDailyOrders);
             setOriginalDailyOrders(JSON.parse(JSON.stringify(initialDailyOrders)));
 
