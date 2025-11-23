@@ -162,6 +162,35 @@ export default function DailyDistributionsPage() {
 		}
 	};
 
+	// Derived grouping & totals (use edited values if in editMode)
+	const grouped = { NLB: [], DLB: [] };
+	rules.forEach(r => {
+		if (r.category === 'NLB') grouped.NLB.push(r); else if (r.category === 'DLB') grouped.DLB.push(r);
+	});
+	// Custom sort orders requested by client
+	const NLB_ORDER = ['මහජන සම්පත','ගොවිසෙත','මෙගා පවර්','ධන නිධානය','හදහන','අද සම්පත','ජය','සුභ දවසක්'];
+	const DLB_ORDER = ['ලග්න වාසනා','ශනිදා','සුපර්බෝල්','අද කෝටිපති','කප්රුක','සසිරි/ජයෝදා','ජය සම්පත','සුපිරි ධන සම්පත'];
+	const NLB_INDEX = new Map(NLB_ORDER.map((n,i)=>[n,i]));
+	const DLB_INDEX = new Map(DLB_ORDER.map((n,i)=>[n,i]));
+	grouped.NLB.sort((a,b)=>{
+		const ia = NLB_INDEX.has(a.name)?NLB_INDEX.get(a.name):1000;
+		const ib = NLB_INDEX.has(b.name)?NLB_INDEX.get(b.name):1000;
+		if (ia !== ib) return ia - ib;
+		return a.name.localeCompare(b.name);
+	});
+	grouped.DLB.sort((a,b)=>{
+		const ia = DLB_INDEX.has(a.name)?DLB_INDEX.get(a.name):1000;
+		const ib = DLB_INDEX.has(b.name)?DLB_INDEX.get(b.name):1000;
+		if (ia !== ib) return ia - ib;
+		return a.name.localeCompare(b.name);
+	});
+	function displayQuantity(r) {
+		return editMode ? Number(editingQuantities[r.lottery_id] ?? 0) : r.quantity;
+	}
+	const totalNLB = grouped.NLB.reduce((sum, r) => sum + displayQuantity(r), 0);
+	const totalDLB = grouped.DLB.reduce((sum, r) => sum + displayQuantity(r), 0);
+	const grandTotal = totalNLB + totalDLB;
+
 	return (
 		<div className="min-h-screen bg-[#0f111a]">
 			<Header />
@@ -256,7 +285,14 @@ export default function DailyDistributionsPage() {
 						<span>Mark this date as HOLIDAY (override day type)</span>
 					</label>
 				)}
-				<div className="text-xs text-blue-300 mb-2">Effective mode: <span className="font-bold">{mode === 'date-specific' ? 'DATE-SPECIFIC OVERRIDE' : 'GENERAL RULES'} ({holidayOverride ? 'HOLIDAY' : dayType})</span></div>
+				<div className="text-xs text-blue-300 mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+					<span>Effective mode: <span className="font-bold">{mode === 'date-specific' ? 'DATE-SPECIFIC OVERRIDE' : (mode==='general-edit' ? 'GENERAL RULES EDIT' : 'GENERAL RULES')} ({holidayOverride ? 'HOLIDAY' : dayType})</span></span>
+					<div className="flex flex-wrap gap-3 text-[11px]">
+						<span className="px-2 py-1 rounded-lg bg-[#181c2b] border border-blue-800/40 text-blue-200">NLB Total: <span className="font-semibold text-cyan-300">{totalNLB}</span></span>
+						<span className="px-2 py-1 rounded-lg bg-[#181c2b] border border-blue-800/40 text-blue-200">DLB Total: <span className="font-semibold text-cyan-300">{totalDLB}</span></span>
+						<span className="px-2 py-1 rounded-lg bg-[#181c2b] border border-blue-800/40 text-blue-200">Grand Total: <span className="font-semibold text-cyan-300">{grandTotal}</span></span>
+					</div>
+				</div>
 				{error && <div className="mb-3 rounded-xl bg-red-900/40 border border-red-700/50 text-red-200 px-4 py-2 text-sm">{error}</div>}
 				{success && <div className="mb-3 rounded-xl bg-green-900/40 border border-green-700/50 text-green-200 px-4 py-2 text-sm">{success}</div>}
 				<div className="rounded-2xl bg-[#23263a] border border-blue-900/40 p-4">
@@ -264,18 +300,20 @@ export default function DailyDistributionsPage() {
 						<div className="text-blue-200 text-sm">Loading rules...</div>
 					) : (
 						<div>
-							{/* Desktop table */}
+							{/* Desktop grouped table */}
 							<div className="hidden md:block">
 								<table className="w-full text-sm">
 									<thead>
 										<tr className="text-blue-200 border-b border-blue-800/50">
-											<th className="py-2 text-left font-semibold">Lottery</th>
-											<th className="py-2 text-left font-semibold">Category</th>
-											<th className="py-2 text-left font-semibold">Quantity</th>
+											<th className="py-2 text-left font-semibold w-1/2">Lottery</th>
+											<th className="py-2 text-left font-semibold w-1/4">Category</th>
+											<th className="py-2 text-left font-semibold w-1/4">Quantity</th>
 										</tr>
 									</thead>
 									<tbody>
-										{rules.map(r => (
+										{/* NLB Section */}
+										
+										{grouped.NLB.map(r => (
 											<tr key={r.lottery_id} className="border-b border-blue-800/30 last:border-none">
 												<td className="py-2 text-blue-100 font-medium">{r.name}</td>
 												<td className="py-2 text-blue-300">{r.category}</td>
@@ -289,37 +327,106 @@ export default function DailyDistributionsPage() {
 															className="w-24 rounded-lg bg-[#181c2b] border border-blue-800/50 text-blue-100 p-1 px-2 focus:outline-none focus:ring-2 focus:ring-cyan-400"
 														/>
 													) : (
-														<span className="text-blue-100">{r.quantity}</span>
+														<span className="text-blue-100">{displayQuantity(r)}</span>
 													)}
 												</td>
 											</tr>
 										))}
+										<tr className="bg-[#141827]">
+											<td colSpan={3} className="py-2 px-2 text-cyan-300 font-semibold tracking-wide">NLB Lotteries (Total: {totalNLB})</td>
+										</tr>
+										<br></br>
+										{/* DLB Section */}
+										
+										{grouped.DLB.map(r => (
+											<tr key={r.lottery_id} className="border-b border-blue-800/30 last:border-none">
+												<td className="py-2 text-blue-100 font-medium">{r.name}</td>
+												<td className="py-2 text-blue-300">{r.category}</td>
+												<td className="py-2">
+													{editMode ? (
+														<input
+															type="number"
+															min={0}
+															value={editingQuantities[r.lottery_id] ?? 0}
+															onChange={e => updateQuantity(r.lottery_id, e.target.value)}
+															className="w-24 rounded-lg bg-[#181c2b] border border-blue-800/50 text-blue-100 p-1 px-2 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+														/>
+													) : (
+														<span className="text-blue-100">{displayQuantity(r)}</span>
+													)}
+												</td>
+											</tr>
+										))}
+										<tr className="bg-[#141827]">
+											<td colSpan={3} className="py-2 px-2 text-cyan-300 font-semibold tracking-wide">DLB Lotteries (Total: {totalDLB})</td>
+										</tr>
+										<br></br>
+										{/* Grand total row */}
+										<tr className="bg-[#181c2b]">
+											<td colSpan={2} className="py-2 px-2 text-blue-200 font-semibold">Grand Total</td>
+											<td className="py-2 px-2 text-cyan-300 font-bold">{grandTotal}</td>
+										</tr>
 									</tbody>
 								</table>
 							</div>
-							{/* Mobile cards */}
-							<div className="md:hidden space-y-3">
-								{rules.map(r => (
-									<div key={r.lottery_id} className="rounded-xl bg-[#181c2b] border border-blue-800/40 p-3 flex justify-between items-center">
-										<div>
-											<div className="text-blue-100 font-semibold text-sm">{r.name}</div>
-											<div className="text-[11px] text-blue-300">Category: {r.category}</div>
-										</div>
-										<div>
-											{editMode ? (
-												<input
-													type="number"
-													min={0}
-													value={editingQuantities[r.lottery_id] ?? 0}
-													onChange={e => updateQuantity(r.lottery_id, e.target.value)}
-													className="w-20 rounded-lg bg-[#23263a] border border-blue-800/50 text-blue-100 p-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
-												/>
-											) : (
-												<span className="text-blue-100 font-semibold">{r.quantity}</span>
-											)}
-										</div>
+							{/* Mobile grouped cards */}
+							<div className="md:hidden space-y-5">
+								<div>
+									<div className="text-cyan-300 text-xs font-semibold mb-2">NLB Lotteries (Total: {totalNLB})</div>
+									<div className="space-y-3">
+										{grouped.NLB.map(r => (
+											<div key={r.lottery_id} className="rounded-xl bg-[#181c2b] border border-blue-800/40 p-3 flex justify-between items-center">
+												<div>
+													<div className="text-blue-100 font-semibold text-sm">{r.name}</div>
+													<div className="text-[11px] text-blue-300">Category: {r.category}</div>
+												</div>
+												<div>
+													{editMode ? (
+														<input
+															type="number"
+															min={0}
+															value={editingQuantities[r.lottery_id] ?? 0}
+															onChange={e => updateQuantity(r.lottery_id, e.target.value)}
+															className="w-20 rounded-lg bg-[#23263a] border border-blue-800/50 text-blue-100 p-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+														/>
+													) : (
+														<span className="text-blue-100 font-semibold">{displayQuantity(r)}</span>
+													)}
+												</div>
+											</div>
+										))}
 									</div>
-								))}
+								</div>
+								<div>
+									<div className="text-cyan-300 text-xs font-semibold mb-2">DLB Lotteries (Total: {totalDLB})</div>
+									<div className="space-y-3">
+										{grouped.DLB.map(r => (
+											<div key={r.lottery_id} className="rounded-xl bg-[#181c2b] border border-blue-800/40 p-3 flex justify-between items-center">
+												<div>
+													<div className="text-blue-100 font-semibold text-sm">{r.name}</div>
+													<div className="text-[11px] text-blue-300">Category: {r.category}</div>
+												</div>
+												<div>
+													{editMode ? (
+														<input
+															type="number"
+															min={0}
+															value={editingQuantities[r.lottery_id] ?? 0}
+															onChange={e => updateQuantity(r.lottery_id, e.target.value)}
+															className="w-20 rounded-lg bg-[#23263a] border border-blue-800/50 text-blue-100 p-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+														/>
+													) : (
+														<span className="text-blue-100 font-semibold">{displayQuantity(r)}</span>
+													)}
+												</div>
+											</div>
+										))}
+									</div>
+								</div>
+								<div className="rounded-xl bg-[#141827] border border-blue-800/40 p-3 flex justify-between items-center">
+									<div className="text-blue-200 text-xs font-semibold">Grand Total</div>
+									<div className="text-cyan-300 font-bold">{grandTotal}</div>
+								</div>
 							</div>
 						</div>
 					)}
