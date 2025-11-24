@@ -8,6 +8,7 @@ function computeDayType(dateStr, override) {
 	}
 	const d = new Date(dateStr + 'T00:00:00'); // ensure no timezone shift
 	const day = d.getUTCDay(); // 0 Sunday ... 6 Saturday
+	// Correct mapping: 0=Sunday, 6=Saturday
 	if (day === 6) return 'SUNDAY';
 	if (day === 5) return 'SATURDAY';
 	return 'WEEKDAY';
@@ -45,11 +46,17 @@ export async function GET(req) {
 			if (!['WEEKDAY','SATURDAY','SUNDAY','HOLIDAY'].includes(explicitDayType)) {
 				return new Response(JSON.stringify({ error: 'Invalid day_type' }), { status: 400 });
 			}
+			// Pick the latest row per lottery to avoid stale duplicates
 			const [generalRules] = await conn.query(`
 				SELECT dr.rule_id, dr.lottery_id, dr.quantity, dr.day_type, lt.name, lt.category
 				FROM distribution_rules dr
+				JOIN (
+					SELECT lottery_id, MAX(rule_id) AS max_id
+					FROM distribution_rules
+					WHERE shop_id = ? AND date IS NULL AND day_type = ?
+					GROUP BY lottery_id
+				) m ON dr.lottery_id = m.lottery_id AND dr.rule_id = m.max_id
 				JOIN lottery_types lt ON dr.lottery_id = lt.id
-				WHERE dr.shop_id = ? AND dr.date IS NULL AND dr.day_type = ?
 				ORDER BY lt.name
 			`, [shopId, explicitDayType]);
 			const byIdGeneral = new Map(generalRules.map(r => [r.lottery_id, r]));
@@ -89,11 +96,17 @@ export async function GET(req) {
 		}
 
 		const computedDayType = computeDayType(date);
+		// Pick the latest row per lottery to avoid stale duplicates
 		const [generalRules] = await conn.query(`
 			SELECT dr.rule_id, dr.lottery_id, dr.quantity, dr.day_type, lt.name, lt.category
 			FROM distribution_rules dr
+			JOIN (
+				SELECT lottery_id, MAX(rule_id) AS max_id
+				FROM distribution_rules
+				WHERE shop_id = ? AND date IS NULL AND day_type = ?
+				GROUP BY lottery_id
+			) m ON dr.lottery_id = m.lottery_id AND dr.rule_id = m.max_id
 			JOIN lottery_types lt ON dr.lottery_id = lt.id
-			WHERE dr.shop_id = ? AND dr.date IS NULL AND dr.day_type = ?
 			ORDER BY lt.name
 		`, [shopId, computedDayType]);
 
@@ -148,6 +161,14 @@ export async function POST(req) {
 	try {
 		conn = await db.getConnection();
 		await conn.beginTransaction();
+
+		// For general rules (date is null), clear existing rows first to avoid duplicates
+		if (!date) {
+			await conn.query(
+				`DELETE FROM distribution_rules WHERE shop_id = ? AND date IS NULL AND day_type = ?`,
+				[shopId, dayType]
+			);
+		}
 
 		const stmt = `
 			INSERT INTO distribution_rules (shop_id, lottery_id, date, day_type, quantity)
