@@ -14,8 +14,8 @@ function formatDate(d) {
 function computeDayType(dateStr) {
 	const d = new Date(dateStr + 'T00:00:00');
 	const day = d.getUTCDay();
-	if (day === 0) return 'SUNDAY';
-	if (day === 6) return 'SATURDAY';
+	if (day === 6) return 'SUNDAY';
+	if (day === 5) return 'SATURDAY';
 	return 'WEEKDAY';
 }
 
