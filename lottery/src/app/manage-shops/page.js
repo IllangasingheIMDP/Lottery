@@ -12,7 +12,7 @@ export default function ManageShops() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
   const router = useRouter();
-
+  
   useEffect(() => {
     const fetchShops = async () => {
       try {
@@ -30,7 +30,14 @@ export default function ManageShops() {
     
     fetchShops();
   }, [showInactive]);
-
+  const handleUpdateShop= async (e) =>{
+    e.preventDefault()
+    try {
+      
+    } catch (error) {
+      
+    }
+  }
   const handleAddShop = async (e) => {
     e.preventDefault();
     try {

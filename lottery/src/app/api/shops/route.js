@@ -55,6 +55,28 @@ export async function DELETE(req) {
     );
   }
 }
+export async function PUT(req){
+
+  const auth = authenticate(req,['samarakoonkumara@gmail.com'])
+  if (auth.error){
+    return new Response(JSON.stringify({error:auth.error}),{status:auth.status})
+  }
+  try{
+    const {id,name, contact_number, address} = await req.json()
+    await db.query('UPDATE shops SET name = ? , SET contact_number=? , set address=? where id=?',[name,contact_number,address,id])
+    return new Response(
+      JSON.stringify({ message: 'Shop added successfully' }),
+      { status: 204 }
+    )
+  }catch(error){
+    console.error('PUT /api/shops error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Server error' }),
+      { status: 500 }
+    );
+
+  }
+}
 
 // Add new endpoint to reactivate shops
 export async function PATCH(req) {
