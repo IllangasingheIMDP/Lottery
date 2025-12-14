@@ -72,56 +72,48 @@ export default function Orders() {
         fetchInitialData();
     }, []);
 
-    // Fetch daily orders when dates are set
+    // Build daily orders purely from distribution totals (no existing orders lookup)
     const fetchDailyOrders = async (newDates, lotteryTypesData, defaultQuantitiesData) => {
         const validDates = newDates.filter(date => date !== '');
-        console.log('Fetching orders for dates:', validDates);
         if (validDates.length === 0) return;
-        
+
         setLoading(true);
         try {
-            const dailyOrdersRes = await fetch(`/api/daily_orders?dates=${validDates.join(',')}`).then(res => res.json());
-            console.log('Daily orders response:', dailyOrdersRes);
-            // Normalize the keys in dailyOrdersRes to yyyy-mm-dd format
-            const normalizedDailyOrders = {};
-            Object.keys(dailyOrdersRes).forEach(dateStr => {
-                const date = new Date(dateStr);
-                const formattedDate = date.toISOString().split('T')[0];
-                normalizedDailyOrders[formattedDate] = dailyOrdersRes[dateStr];
-            });
-    
+            // Start with defaults for all lotteries per date
             const initialDailyOrders = {};
             newDates.forEach(date => {
                 if (date) {
                     initialDailyOrders[date] = {};
                     lotteryTypesData.forEach(lt => {
-                        initialDailyOrders[date][lt.id] = normalizedDailyOrders[date]?.[lt.id] || 0;
+                        const defQty = (defaultQuantitiesData && defaultQuantitiesData[lt.id]) ? Number(defaultQuantitiesData[lt.id]) : 0;
+                        initialDailyOrders[date][lt.id] = defQty;
                     });
                 }
             });
 
-            // Fetch distribution totals to use as fallback where no order exists
+            // Overlay distribution totals
             const distTotalsRes = await fetch(`/api/distribution_totals?dates=${validDates.join(',')}`).then(r => r.ok ? r.json() : null);
+            console.log('Distribution Totals Response:', distTotalsRes);
             if (distTotalsRes && distTotalsRes.dates) {
                 validDates.forEach(date => {
                     const distForDate = distTotalsRes.dates[date];
-                    if (!distForDate) return;
+                    if (!distForDate || !Array.isArray(distForDate.lottery_totals)) return;
                     distForDate.lottery_totals.forEach(lot => {
-                        // Only override if original order missing (undefined) not if explicitly zero present in normalizedDailyOrders
-                        const hasOriginal = normalizedDailyOrders[date] && Object.prototype.hasOwnProperty.call(normalizedDailyOrders[date], lot.lottery_id);
-                        if (!hasOriginal) {
+                        // Use computed distribution quantity per lottery
+                        if (initialDailyOrders[date] && typeof lot.quantity === 'number') {
                             initialDailyOrders[date][lot.lottery_id] = lot.quantity;
                         }
                     });
                 });
             }
+
             setDailyOrders(initialDailyOrders);
             setOriginalDailyOrders(JSON.parse(JSON.stringify(initialDailyOrders)));
 
             // Fetch ordering notes for these dates
             await fetchOrderingNotes(validDates);
         } catch (error) {
-            console.error('Error fetching daily orders:', error);
+            console.error('Error building orders from distribution totals:', error);
         } finally {
             setLoading(false);
         }

@@ -1,9 +1,15 @@
 import db from '@/lib/db';
 import { authenticate } from '@/lib/auth';
 
+// Parse YYYY-MM-DD as a local date to avoid UTC skew
+function parseLocalYMD(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+}
+
 function computeDayType(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  const day = d.getUTCDay(); // 0 Sunday ... 6 Saturday
+  const d = parseLocalYMD(dateStr);
+  const day = d.getDay(); // 0 Sunday ... 6 Saturday (local)
   if (day === 0) return 'SUNDAY';
   if (day === 6) return 'SATURDAY';
   return 'WEEKDAY';
