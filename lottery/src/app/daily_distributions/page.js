@@ -324,6 +324,7 @@ export default function DailyDistributionsPage() {
 															min={0}
 															value={editingQuantities[r.lottery_id] ?? 0}
 															onChange={e => updateQuantity(r.lottery_id, e.target.value)}
+															onWheel={e => e.currentTarget.blur()}
 															className="w-24 rounded-lg bg-[#181c2b] border border-blue-800/50 text-blue-100 p-1 px-2 focus:outline-none focus:ring-2 focus:ring-cyan-400"
 														/>
 													) : (
@@ -349,6 +350,7 @@ export default function DailyDistributionsPage() {
 															min={0}
 															value={editingQuantities[r.lottery_id] ?? 0}
 															onChange={e => updateQuantity(r.lottery_id, e.target.value)}
+															onWheel={e => e.currentTarget.blur()}
 															className="w-24 rounded-lg bg-[#181c2b] border border-blue-800/50 text-blue-100 p-1 px-2 focus:outline-none focus:ring-2 focus:ring-cyan-400"
 														/>
 													) : (
@@ -387,6 +389,7 @@ export default function DailyDistributionsPage() {
 															min={0}
 															value={editingQuantities[r.lottery_id] ?? 0}
 															onChange={e => updateQuantity(r.lottery_id, e.target.value)}
+															onWheel={e => e.currentTarget.blur()}
 															className="w-20 rounded-lg bg-[#23263a] border border-blue-800/50 text-blue-100 p-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
 														/>
 													) : (
@@ -413,6 +416,7 @@ export default function DailyDistributionsPage() {
 															min={0}
 															value={editingQuantities[r.lottery_id] ?? 0}
 															onChange={e => updateQuantity(r.lottery_id, e.target.value)}
+															onWheel={e => e.currentTarget.blur()}
 															className="w-20 rounded-lg bg-[#23263a] border border-blue-800/50 text-blue-100 p-1 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
 														/>
 													) : (
