@@ -64,7 +64,7 @@ export default function Header() {
     { name: 'Manage Shops', href: '/manage-shops' },
     { name: 'Daily Distributions', href: '/daily_distributions' },
     { name: 'Lottery Records', href: '/lottery-records' },
-    { name: 'Ordering details', href: '/ordering-details' },
+    
     { name: 'Ordering Notes', href: '/ordering_notes' },
     { name: 'Orders', href: '/orders' },
     { name: 'Profit Statistics', href: '/profit-statistics' },

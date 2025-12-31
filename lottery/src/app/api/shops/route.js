@@ -84,3 +84,47 @@ export async function PATCH(req) {
   }
 }
 
+// Update shop details (name, contact_number, address)
+export async function PUT(req) {
+  const auth = authenticate(req, ['samarakoonkumara@gmail.com']);
+  if (auth.error) {
+    return new Response(
+      JSON.stringify({ error: auth.error }),
+      { status: auth.status }
+    );
+  }
+
+  try {
+    const { id, name, contact_number, address } = await req.json();
+
+    if (!id) {
+      return new Response(
+        JSON.stringify({ error: 'Shop id is required' }),
+        { status: 400 }
+      );
+    }
+
+    // Use COALESCE to support partial updates
+    await db.query(
+      `UPDATE shops
+       SET 
+         name = COALESCE(?, name),
+         contact_number = COALESCE(?, contact_number),
+         address = COALESCE(?, address)
+       WHERE id = ?`,
+      [name ?? null, contact_number ?? null, address ?? null, id]
+    );
+
+    return new Response(
+      JSON.stringify({ message: 'Shop updated successfully' }),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('PUT /api/shops error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Server error' }),
+      { status: 500 }
+    );
+  }
+}
+

@@ -10,7 +10,13 @@ export default function ManageShops() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [showInactive, setShowInactive] = useState(false);
+  const [editingShopId, setEditingShopId] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editContact, setEditContact] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -55,6 +61,7 @@ export default function ManageShops() {
       setAddress('');
       
       // Show success message
+      setSuccessMessage('Shop added successfully!');
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
@@ -89,10 +96,52 @@ export default function ManageShops() {
       ));
       
       // Show success message
+      setSuccessMessage(shop.active ? 'Shop deactivated successfully!' : 'Shop activated successfully!');
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
       setError(err.message);
+    }
+  };
+
+  const handleEditClick = (shop) => {
+    setEditingShopId(shop.id);
+    setEditName(shop.name || '');
+    setEditContact(shop.contact_number || '');
+    setEditAddress(shop.address || '');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingShopId(null);
+    setEditName('');
+    setEditContact('');
+    setEditAddress('');
+    setSavingEdit(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingShopId) return;
+    try {
+      setSavingEdit(true);
+      const res = await fetch('/api/shops', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingShopId, name: editName, contact_number: editContact, address: editAddress }),
+      });
+      if (!res.ok) throw new Error('Failed to update shop');
+
+      // Optimistically update local state
+      setShops(shops.map(s => (
+        s.id === editingShopId ? { ...s, name: editName, contact_number: editContact, address: editAddress } : s
+      )));
+
+      setSuccessMessage('Shop updated successfully!');
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+      handleCancelEdit();
+    } catch (err) {
+      setError(err.message);
+      setSavingEdit(false);
     }
   };
 
@@ -120,7 +169,7 @@ export default function ManageShops() {
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </svg>
-            Shop added successfully!
+            {successMessage || 'Action completed successfully!'}
           </div>
           <button onClick={() => setShowSuccess(false)} className="text-gray-500 hover:text-gray-700">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -251,58 +300,135 @@ export default function ManageShops() {
                 {shops.map((shop) => (
                   <div key={shop.id} className={`p-4 hover:bg-gray-50 transition-colors ${!shop.active ? 'opacity-75' : ''}`}>
                     <div className="flex justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-medium text-gray-900">{shop.name}</h3>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            shop.active 
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {shop.active ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                        <div className="mt-1 flex items-center text-sm text-gray-500">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                          </svg>
-                          {shop.contact_number}
-                        </div>
-                        {shop.address && (
-                          <div className="mt-1 flex items-center text-sm text-gray-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            {shop.address}
+                      <div className="flex-1 mr-4">
+                        {editingShopId === shop.id ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                shop.active 
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {shop.active ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                              </svg>
+                              <input
+                                type="text"
+                                value={editContact}
+                                onChange={(e) => setEditContact(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <input
+                                type="text"
+                                value={editAddress}
+                                onChange={(e) => setEditAddress(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2 pt-1">
+                              <button
+                                onClick={handleSaveEdit}
+                                disabled={savingEdit}
+                                className={`px-3 py-1 rounded-md text-white ${savingEdit ? 'bg-blue-300' : 'bg-blue-600 hover:bg-blue-700'}`}
+                              >
+                                {savingEdit ? 'Saving...' : 'Save'}
+                              </button>
+                              <button
+                                onClick={handleCancelEdit}
+                                className="px-3 py-1 rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-lg font-medium text-gray-900">{shop.name}</h3>
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                shop.active 
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {shop.active ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                            <div className="mt-1 flex items-center text-sm text-gray-500">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                              </svg>
+                              {shop.contact_number}
+                            </div>
+                            {shop.address && (
+                              <div className="mt-1 flex items-center text-sm text-gray-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                {shop.address}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
-                      <button
-                        onClick={() => handleToggleShopStatus(shop.id, shop.active)}
-                        className={`transition-colors hover:cursor-pointer flex items-center gap-1 px-2 py-1 rounded-md ${
-                          shop.active
-                            ? 'text-red-600 hover:text-red-800 hover:bg-red-50'
-                            : 'text-green-600 hover:text-green-800 hover:bg-green-50'
-                        }`}
-                        title={shop.active ? "Deactivate shop" : "Activate shop"}
-                      >
-                        {shop.active ? (
-                          <>
+                      <div className="flex items-start gap-2">
+                        {editingShopId === shop.id ? null : (
+                          <button
+                            onClick={() => handleEditClick(shop)}
+                            className="transition-colors hover:cursor-pointer flex items-center gap-1 px-2 py-1 rounded-md text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                            title="Edit shop"
+                          >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" />
+                              <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
+                              <path fillRule="evenodd" d="M2 6a2 2 0 012-2h6a1 1 0 110 2H4v10h10v-6a1 1 0 112 0v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
                             </svg>
-                            <span className="text-sm font-medium">Deactivate</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                            </svg>
-                            <span className="text-sm font-medium">Activate</span>
-                          </>
+                            <span className="text-sm font-medium">Edit</span>
+                          </button>
                         )}
-                      </button>
+                        {editingShopId === shop.id ? null : (
+                          <button
+                            onClick={() => handleToggleShopStatus(shop.id, shop.active)}
+                            className={`transition-colors hover:cursor-pointer flex items-center gap-1 px-2 py-1 rounded-md ${
+                              shop.active
+                                ? 'text-red-600 hover:text-red-800 hover:bg-red-50'
+                                : 'text-green-600 hover:text-green-800 hover:bg-green-50'
+                            }`}
+                            title={shop.active ? "Deactivate shop" : "Activate shop"}
+                          >
+                            {shop.active ? (
+                              <>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" />
+                                </svg>
+                                <span className="text-sm font-medium">Deactivate</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                                <span className="text-sm font-medium">Activate</span>
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
