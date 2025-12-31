@@ -50,7 +50,7 @@ export async function POST(req) {
       const total_worth = price_per_lottery * lottery_quantity;
       
       const [result] = await conn.query(
-        'INSERT INTO daily_records (shop_id, date, price_per_lottery, lottery_quantity, total_worth, step) VALUES (?, ?, ?, ?, ?, 1)',
+        'INSERT INTO daily_records (shop_id, date, price_per_lottery, lottery_quantity, total_worth, step, completed) VALUES (?, ?, ?, ?, ?, 1, 0)',
         [shop_id, date, price_per_lottery, lottery_quantity, total_worth]
       );
       
