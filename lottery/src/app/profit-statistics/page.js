@@ -33,10 +33,8 @@ export default function ProfitStatistics() {
   const [statistics, setStatistics] = useState({
     totalProfit: 0,
     totalKumaraProfit: 0,
-    totalManagerProfit: 0,
     averageProfit: 0,
     averageKumaraProfit: 0,
-    averageManagerProfit: 0,
     highestProfit: 0,
     lowestProfit: 0,
     totalDays: 0,
@@ -132,10 +130,8 @@ export default function ProfitStatistics() {
     }
 
     const totalKumaraProfit = data.reduce((sum, item) => sum + item.kumara_profit, 0);
-    const totalManagerProfit = data.reduce((sum, item) => sum + item.manager_profit, 0);
     const totalProfit = data.reduce((sum, item) => sum + item.total_profit, 0);
     const averageKumaraProfit = totalKumaraProfit / data.length;
-    const averageManagerProfit = totalManagerProfit / data.length;
     const averageProfit = totalProfit / data.length;
     const profits = data.map(item => item.total_profit);
     const highestProfit = Math.max(...profits);
@@ -145,10 +141,8 @@ export default function ProfitStatistics() {
 
     setStatistics({
       totalKumaraProfit,
-      totalManagerProfit,
       totalProfit,
       averageKumaraProfit,
-      averageManagerProfit,
       averageProfit,
       highestProfit,
       lowestProfit,
@@ -386,7 +380,7 @@ export default function ProfitStatistics() {
         {/* Statistics Cards */}
         {!loading && !error && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
                 <div className="flex items-center">
                   <div className="flex-1">
@@ -419,21 +413,6 @@ export default function ProfitStatistics() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-500">
-                <div className="flex items-center">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-800">Manager&apos;s Total</h3>
-                    <p className={`text-2xl font-bold ${statistics.totalManagerProfit >= 0 ? 'text-purple-600' : 'text-red-600'}`}>
-                      Rs. {formatCurrency(statistics.totalManagerProfit)}
-                    </p>
-                  </div>
-                  <div className="bg-purple-100 rounded-full p-3">
-                    <svg className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
 
               <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
                 <div className="flex items-center">
@@ -750,9 +729,6 @@ export default function ProfitStatistics() {
                               Kumara&apos;s Profit
                             </th>
                             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Manager&apos;s Profit
-                            </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Total Profit
                             </th>
                             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -770,11 +746,6 @@ export default function ProfitStatistics() {
                                 profit.kumara_profit >= 0 ? 'text-blue-600' : 'text-red-600'
                               }`}>
                                 Rs. {formatCurrency(profit.kumara_profit)}
-                              </td>
-                              <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
-                                profit.manager_profit >= 0 ? 'text-purple-600' : 'text-red-600'
-                              }`}>
-                                Rs. {formatCurrency(profit.manager_profit)}
                               </td>
                               <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
                                 profit.total_profit >= 0 ? 'text-green-600' : 'text-red-600'

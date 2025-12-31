@@ -184,8 +184,28 @@ export async function POST(req) {
 			await conn.query(stmt, [shopId, r.lottery_id, date || null, dayType, Number(r.quantity)]);
 		}
 
+		// If this is a date-specific save, update daily_orders to reflect totals across all shops
+		if (date) {
+			// Compute totals per lottery type for the given date
+			const [totals] = await conn.query(`
+				SELECT dr.lottery_id AS lottery_type_id, SUM(dr.quantity) AS total_quantity
+				FROM distribution_rules dr
+				WHERE dr.date = ?
+				GROUP BY dr.lottery_id
+			`, [date]);
+
+			if (totals && totals.length > 0) {
+				const values = totals.map(t => [date, t.lottery_type_id, Number(t.total_quantity)]);
+				await conn.query(`
+					INSERT INTO daily_orders (date, lottery_type_id, quantity)
+					VALUES ?
+					ON DUPLICATE KEY UPDATE quantity = VALUES(quantity)
+				`, [values]);
+			}
+		}
+
 		await conn.commit();
-		return new Response(JSON.stringify({ message: 'Rules saved', shop_id: shopId, date: date || null, day_type: dayType }), { status: 200 });
+		return new Response(JSON.stringify({ message: 'Rules saved', shop_id: shopId, date: date || null, day_type: dayType, daily_orders_updated: Boolean(date) }), { status: 200 });
 	} catch (err) {
 		if (conn) await conn.rollback();
 		console.error('Error saving distribution rules:', err);
