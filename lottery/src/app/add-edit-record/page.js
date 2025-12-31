@@ -13,7 +13,7 @@ function AddEditRecordContent() {
   const router = useRouter();
   //const searchParams = useSearchParams();
   const searchParams = useSearchParams();
-  const visibleSteps = [1, 2, 6];
+  const visibleSteps = [1, 2];
 
   const getNextStep = (currentStep) => {
     const currentIndex = visibleSteps.indexOf(currentStep);
@@ -287,11 +287,11 @@ function AddEditRecordContent() {
               <div className="w-full bg-gray-200 rounded-full h-2.5">
                 <div
                   className="bg-indigo-600 h-2.5 rounded-full transition-all duration-300"
-                  style={{ width: `${(step / 6) * 100}%` }}
+                  style={{ width: `${((visibleSteps.indexOf(step) + 1) / visibleSteps.length) * 100}%` }}
                 ></div>
               </div>
               <span className="ml-4 text-sm font-medium text-gray-700">
-                {step}/6
+                {visibleSteps.indexOf(step) + 1}/{visibleSteps.length}
               </span>
             </div>
           </div>
@@ -533,7 +533,8 @@ function Step2({ initialData, onSubmit, loading }) {
     e.preventDefault();
     onSubmit({
       cash_given: parseFloat(cash),
-      got_tickets_total_price: parseFloat(totalPrice)
+      got_tickets_total_price: parseFloat(totalPrice),
+      completed: true
     });
   };
 
@@ -642,7 +643,7 @@ function Step2({ initialData, onSubmit, loading }) {
                   Processing...
                 </>
               ) : (
-                'Next'
+                'Complete'
               )}
             </button>
           </div>

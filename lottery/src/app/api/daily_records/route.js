@@ -71,11 +71,18 @@ export async function POST(req) {
 
 
    else if (step === 2) {
-      const { cash_given, got_tickets_total_price } = data;
-      await conn.query(
-        'UPDATE daily_records SET cash_given = ?, got_tickets_total_price = ?, step = 2 WHERE id = ?',
-        [cash_given, got_tickets_total_price, id]
-      );
+      const { cash_given, got_tickets_total_price, completed } = data;
+      if (completed) {
+        await conn.query(
+          'UPDATE daily_records SET cash_given = ?, got_tickets_total_price = ?, step = 2, completed = 1 WHERE id = ?',
+          [cash_given, got_tickets_total_price, id]
+        );
+      } else {
+        await conn.query(
+          'UPDATE daily_records SET cash_given = ?, got_tickets_total_price = ?, step = 2 WHERE id = ?',
+          [cash_given, got_tickets_total_price, id]
+        );
+      }
     } else if (step === 3) {
       const nlb = JSON.stringify(data.nlb);
       const nlb_total_price = Object.entries(data.nlb).reduce(
