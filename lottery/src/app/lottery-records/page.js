@@ -49,6 +49,11 @@ function LotteryRecordsContent() {
   // Special case tickets (bought at 31, sold at 34/35)
   const [specialTickets31to34, setSpecialTickets31to34] = useState(0);
   const [specialTickets31to35, setSpecialTickets31to35] = useState(0);
+  // Added: explicit inputs for new pricing options
+  const [specialTickets31to335, setSpecialTickets31to335] = useState(0);
+  const [defaultTickets325to335, setDefaultTickets325to335] = useState(0);
+  const [defaultTickets325to34, setDefaultTickets325to34] = useState(0);
+  const [defaultTickets325to35, setDefaultTickets325to35] = useState(0);
   
   const router = useRouter();
 
@@ -187,62 +192,20 @@ function LotteryRecordsContent() {
     return parseFloat(value).toFixed(2);
   };
 
-  // Calculate daily profit based on ticket price categories
+  // Calculate daily profit based on explicit input categories
   const calculateDailyProfit = () => {
-    if (records.length === 0) return { kumaraProfit: 0, managerProfit: 0, totalProfit: 0 };
+    // Profit calculation uses 6 input boxes only
+    const profitFrom31 = (specialTickets31to335 * 2.5)
+      + (specialTickets31to34 * 3)
+      + (specialTickets31to35 * 4);
 
-    // Group records by price per ticket (same logic as in the UI)
-    const priceGroups = records.reduce((groups, record) => {
-      const pricePerTicket = record.total_worth / record.lottery_quantity;
-      if (!groups[pricePerTicket]) {
-        groups[pricePerTicket] = {
-          totalTickets: 0
-        };
-      }
-      groups[pricePerTicket].totalTickets += record.lottery_quantity;
-      return groups;
-    }, {});
+    const profitFrom325 = (defaultTickets325to335 * 1)
+      + (defaultTickets325to34 * 1.5)
+      + (defaultTickets325to35 * 2.5);
 
-    let kumaraProfit = 0;
-    let managerProfit = 0;
-
-    // Calculate profits for each price category
-    Object.entries(priceGroups).forEach(([price, data]) => {
-      const ticketPrice = Number(price);
-      
-      if (ticketPrice === 34) {
-        // For 34 price tickets: Kumara = 1, Manager = 0.5 per ticket
-        // But subtract special case tickets
-        const standardTickets34 = Math.max(0, data.totalTickets - specialTickets31to34);
-        kumaraProfit += standardTickets34 * 1; // (34 - 32.5 = 1.5, but Kumara gets 1)
-        managerProfit += standardTickets34 * 0.5; // Manager gets 0.5
-        
-        // Add special case profits for 31->34 tickets
-        kumaraProfit += specialTickets31to34 * 3; // (34 - 31 = 3 for Kumara)
-        managerProfit += specialTickets31to34 * 1; // 1 for Manager
-      } else if (ticketPrice === 35) {
-        // For 35 price tickets: Kumara = 1.5, Manager = 1 per ticket
-        // But subtract special case tickets
-        const standardTickets35 = Math.max(0, data.totalTickets - specialTickets31to35);
-        kumaraProfit += standardTickets35 * 1.5; // (35 - 32.5 = 2.5, but Kumara gets 1.5)
-        managerProfit += standardTickets35 * 1; // Manager gets 1
-        
-        // Add special case profits for 31->35 tickets
-        kumaraProfit += specialTickets31to35 * 4; // (35 - 31 = 4 for Kumara)
-        managerProfit += specialTickets31to35 * 1; // 1 for Manager
-      } else {
-        // For other prices, calculate based on standard formula (price - 32.5)
-        const totalProfitPerTicket = ticketPrice - 32.5;
-        // Distribute total profit proportionally (assuming 60% Kumara, 40% Manager for other prices)
-        kumaraProfit += data.totalTickets * totalProfitPerTicket * 0.6;
-        managerProfit += data.totalTickets * totalProfitPerTicket * 0.4;
-      }
-    });
-
-    // Round to nearest whole numbers
-    kumaraProfit = Math.round(kumaraProfit);
-    managerProfit = Math.round(managerProfit);
-    const totalProfit = kumaraProfit + managerProfit;
+    const kumaraProfit = Math.round(profitFrom31 + profitFrom325);
+    const managerProfit = 0; // Manager no longer gets a share
+    const totalProfit = kumaraProfit;
 
     return { kumaraProfit, managerProfit, totalProfit };
   };
@@ -258,17 +221,21 @@ function LotteryRecordsContent() {
       return groups;
     }, {});
 
+    const available335 = priceGroups[33.5]?.totalTickets || 0;
     const available34 = priceGroups[34]?.totalTickets || 0;
     const available35 = priceGroups[35]?.totalTickets || 0;
 
     const errors = [];
-    
-    if (specialTickets31to34 > available34) {
-      errors.push(`Special tickets 31→34 (${specialTickets31to34}) cannot exceed available 34-price tickets (${available34})`);
+
+    // Combined validations: special + default for each selling price must not exceed available
+    if ((specialTickets31to335 + defaultTickets325to335) > available335) {
+      errors.push(`(31→33.50 + 32.50→33.50) total exceeds available 33.50-price tickets (${available335})`);
     }
-    
-    if (specialTickets31to35 > available35) {
-      errors.push(`Special tickets 31→35 (${specialTickets31to35}) cannot exceed available 35-price tickets (${available35})`);
+    if ((specialTickets31to34 + defaultTickets325to34) > available34) {
+      errors.push(`(31→34 + 32.50→34) total exceeds available 34-price tickets (${available34})`);
+    }
+    if ((specialTickets31to35 + defaultTickets325to35) > available35) {
+      errors.push(`(31→35 + 32.50→35) total exceeds available 35-price tickets (${available35})`);
     }
 
     return errors;
@@ -297,14 +264,14 @@ function LotteryRecordsContent() {
         body: JSON.stringify({
           date: date,
           kumara_profit: kumaraProfit,
-          manager_profit: managerProfit
+          manager_profit: 0
         })
       });
 
       if (res.ok) {
         const responseData = await res.json();
-        alert(`Daily profit saved successfully!\nKumara: Rs. ${formatCurrency(kumaraProfit)}\nManager: Rs. ${formatCurrency(managerProfit)}\nTotal: Rs. ${formatCurrency(totalProfit)}`);
-        setExistingProfit({ kumaraProfit, managerProfit, totalProfit });
+        alert(`Daily profit saved successfully!\nKumara: Rs. ${formatCurrency(kumaraProfit)}\nTotal: Rs. ${formatCurrency(totalProfit)}`);
+        setExistingProfit({ kumaraProfit, managerProfit: 0, totalProfit });
         setIsProfitSaved(true);
       } else {
         const errorData = await res.json();
@@ -341,13 +308,13 @@ function LotteryRecordsContent() {
         body: JSON.stringify({
           date: date,
           kumara_profit: kumaraProfit,
-          manager_profit: managerProfit
+          manager_profit: 0
         })
       });
 
       if (res.ok) {
-        alert(`Daily profit updated successfully!\nKumara: Rs. ${formatCurrency(kumaraProfit)}\nManager: Rs. ${formatCurrency(managerProfit)}\nTotal: Rs. ${formatCurrency(totalProfit)}`);
-        setExistingProfit({ kumaraProfit, managerProfit, totalProfit });
+        alert(`Daily profit updated successfully!\nKumara: Rs. ${formatCurrency(kumaraProfit)}\nTotal: Rs. ${formatCurrency(totalProfit)}`);
+        setExistingProfit({ kumaraProfit, managerProfit: 0, totalProfit });
       } else {
         const errorData = await res.json();
         throw new Error(errorData.error || 'Failed to update profit');
@@ -629,12 +596,21 @@ function LotteryRecordsContent() {
                 
                 {/* Special Tickets Input Section */}
                 <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Special Tickets (Bought at Rs. 31)</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Tickets Bought at Rs. 31</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
-                        Sold at Rs. 34:
-                      </label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Sold at Rs. 33.50:</label>
+                      <input
+                        type="number"
+                        value={specialTickets31to335}
+                        onChange={(e) => setSpecialTickets31to335(parseInt(e.target.value) || 0)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Quantity"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Sold at Rs. 34:</label>
                       <input
                         type="number"
                         value={specialTickets31to34}
@@ -645,13 +621,50 @@ function LotteryRecordsContent() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
-                        Sold at Rs. 35:
-                      </label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Sold at Rs. 35:</label>
                       <input
                         type="number"
                         value={specialTickets31to35}
                         onChange={(e) => setSpecialTickets31to35(parseInt(e.target.value) || 0)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Quantity"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Tickets Bought at Rs. 32.50</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Sold at Rs. 33.50:</label>
+                      <input
+                        type="number"
+                        value={defaultTickets325to335}
+                        onChange={(e) => setDefaultTickets325to335(parseInt(e.target.value) || 0)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Quantity"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Sold at Rs. 34:</label>
+                      <input
+                        type="number"
+                        value={defaultTickets325to34}
+                        onChange={(e) => setDefaultTickets325to34(parseInt(e.target.value) || 0)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Quantity"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Sold at Rs. 35:</label>
+                      <input
+                        type="number"
+                        value={defaultTickets325to35}
+                        onChange={(e) => setDefaultTickets325to35(parseInt(e.target.value) || 0)}
                         className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         placeholder="Quantity"
                         min="0"
@@ -665,15 +678,11 @@ function LotteryRecordsContent() {
                     {/* Current Calculated Profits */}
                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                       <h4 className="text-sm font-semibold text-blue-800 mb-2">Current Calculated Profits:</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                        <div className="text-center">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        {/* <div className="text-center">
                           <span className="block text-xs text-gray-600">Kumara&apos;s Profit</span>
                           <span className="font-bold text-green-700">Rs. {formatCurrency(calculateDailyProfit().kumaraProfit)}</span>
-                        </div>
-                        <div className="text-center">
-                          <span className="block text-xs text-gray-600">Manager&apos;s Profit</span>
-                          <span className="font-bold text-blue-700">Rs. {formatCurrency(calculateDailyProfit().managerProfit)}</span>
-                        </div>
+                        </div> */}
                         <div className="text-center">
                           <span className="block text-xs text-gray-600">Total Profit</span>
                           <span className="font-bold text-purple-700">Rs. {formatCurrency(calculateDailyProfit().totalProfit)}</span>
@@ -685,15 +694,11 @@ function LotteryRecordsContent() {
                     {isProfitSaved && existingProfit !== null && (
                       <div className="p-4 bg-green-50 rounded-lg border border-green-200">
                         <h4 className="text-sm font-semibold text-green-800 mb-2">Saved Profits:</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                          <div className="text-center">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                          {/* <div className="text-center">
                             <span className="block text-xs text-gray-600">Kumara&apos;s Profit</span>
                             <span className="font-bold text-green-700">Rs. {formatCurrency(existingProfit.kumaraProfit)}</span>
-                          </div>
-                          <div className="text-center">
-                            <span className="block text-xs text-gray-600">Manager&apos;s Profit</span>
-                            <span className="font-bold text-blue-700">Rs. {formatCurrency(existingProfit.managerProfit)}</span>
-                          </div>
+                          </div> */}
                           <div className="text-center">
                             <span className="block text-xs text-gray-600">Total Profit</span>
                             <span className="font-bold text-purple-700">Rs. {formatCurrency(existingProfit.totalProfit)}</span>
