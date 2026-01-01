@@ -1,6 +1,8 @@
 import db from '@/lib/db';
 import { authenticate } from '@/lib/auth';
 
+export const maxDuration = 60;
+
 // Helper to determine day type from a date string (YYYY-MM-DD)
 function computeDayType(dateStr, override) {
 	if (override && ['WEEKDAY','SATURDAY','SUNDAY','HOLIDAY'].includes(override)) {
@@ -170,18 +172,26 @@ export async function POST(req) {
 			);
 		}
 
-		const stmt = `
-			INSERT INTO distribution_rules (shop_id, lottery_id, date, day_type, quantity)
-			VALUES (?, ?, ?, ?, ?)
-			ON DUPLICATE KEY UPDATE quantity = VALUES(quantity)
-		`;
-
+		const values = [];
 		for (const r of rules) {
 			if (!r.lottery_id || r.quantity == null || isNaN(r.quantity)) {
 				await conn.rollback();
 				return new Response(JSON.stringify({ error: 'Each rule must have lottery_id and numeric quantity' }), { status: 400 });
 			}
-			await conn.query(stmt, [shopId, r.lottery_id, date || null, dayType, Number(r.quantity)]);
+			values.push([shopId, r.lottery_id, date || null, dayType, Number(r.quantity)]);
+		}
+
+		const BATCH_SIZE = 500;
+		for (let i = 0; i < values.length; i += BATCH_SIZE) {
+			const batch = values.slice(i, i + BATCH_SIZE);
+			await conn.query(
+				`
+				INSERT INTO distribution_rules (shop_id, lottery_id, date, day_type, quantity)
+				VALUES ?
+				ON DUPLICATE KEY UPDATE quantity = VALUES(quantity)
+				`,
+				[batch]
+			);
 		}
 
 		// If this is a date-specific save, update daily_orders to reflect totals across all shops
