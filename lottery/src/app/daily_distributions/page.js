@@ -242,10 +242,7 @@ export default function DailyDistributionsPage() {
 								onClick={() => setEditModeType('date')}
 								className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all ${editModeType==='date' ? 'bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-500 text-white' : 'bg-[#23263a] text-blue-200 border border-blue-800/50'}`}
 							>Per Date</button>
-							<button
-								onClick={() => setEditModeType('general')}
-								className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all ${editModeType==='general' ? 'bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-500 text-white' : 'bg-[#23263a] text-blue-200 border border-blue-800/50'}`}
-							>General Rules</button>
+							
 						</div>
 					</div>
 					<div className="flex flex-col justify-end">
@@ -274,7 +271,7 @@ export default function DailyDistributionsPage() {
 						)}
 					</div>
 				</div>
-				{editMode && editModeType === 'date' && (
+				{/* {editMode && editModeType === 'date' && (
 					<label className="inline-flex items-center space-x-2 text-xs font-semibold text-blue-100 mb-4">
 						<input
 							type="checkbox"
@@ -284,9 +281,9 @@ export default function DailyDistributionsPage() {
 						/>
 						<span>Mark this date as HOLIDAY (override day type)</span>
 					</label>
-				)}
+				)} */}
 				<div className="text-xs text-blue-300 mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-					<span>Effective mode: <span className="font-bold">{mode === 'date-specific' ? 'DATE-SPECIFIC OVERRIDE' : (mode==='general-edit' ? 'GENERAL RULES EDIT' : 'GENERAL RULES')} ({holidayOverride ? 'HOLIDAY' : dayType})</span></span>
+					{/* <span>Effective mode: <span className="font-bold">{mode === 'date-specific' ? 'DATE-SPECIFIC OVERRIDE' : (mode==='general-edit' ? 'GENERAL RULES EDIT' : 'GENERAL RULES')} ({holidayOverride ? 'HOLIDAY' : dayType})</span></span> */}
 					<div className="flex flex-wrap gap-3 text-[11px]">
 						<span className="px-2 py-1 rounded-lg bg-[#181c2b] border border-blue-800/40 text-blue-200">NLB Total: <span className="font-semibold text-cyan-300">{totalNLB}</span></span>
 						<span className="px-2 py-1 rounded-lg bg-[#181c2b] border border-blue-800/40 text-blue-200">DLB Total: <span className="font-semibold text-cyan-300">{totalDLB}</span></span>
