@@ -40,6 +40,14 @@ export default function DailyDistributionsPage() {
 	const [showCopyModal, setShowCopyModal] = useState(false);
 	const [copyFromDate, setCopyFromDate] = useState('');
 	const [loadingCopy, setLoadingCopy] = useState(false);
+	// Bulk copy (all shops) state
+	const [showBulkModal, setShowBulkModal] = useState(false);
+	const [bulkMode, setBulkMode] = useState(false);
+	const [bulkFromDate, setBulkFromDate] = useState('');
+	const [bulkToDate, setBulkToDate] = useState(formatDate(new Date()));
+	const [bulkIndex, setBulkIndex] = useState(0);
+	const [bulkDrafts, setBulkDrafts] = useState({});
+	const [bulkSaveStatus, setBulkSaveStatus] = useState({});
 
 	// Fetch shops on mount
 	useEffect(() => {
@@ -62,6 +70,7 @@ export default function DailyDistributionsPage() {
 	// Fetch rules depending on editing mode and selections
 	useEffect(() => {
 		if (!selectedShop) return;
+		if (bulkMode) return;
 		const fetchRules = async () => {
 			setDataLoading(true);
 			setError(null);
@@ -100,6 +109,13 @@ export default function DailyDistributionsPage() {
 	};
 
 	const cancelEdit = () => {
+		if (bulkMode) {
+			setBulkMode(false);
+			setShowBulkModal(false);
+			setBulkFromDate('');
+			setBulkDrafts({});
+			setBulkSaveStatus({});
+		}
 		setEditMode(false);
 		setEditingQuantities({});
 		setHolidayOverride(false);
@@ -107,7 +123,13 @@ export default function DailyDistributionsPage() {
 	};
 
 	const updateQuantity = (lotteryId, value) => {
-		setEditingQuantities(q => ({ ...q, [lotteryId]: value === '' ? '' : Math.max(0, Number(value)) }));
+		setEditingQuantities(q => {
+			const next = { ...q, [lotteryId]: value === '' ? '' : Math.max(0, Number(value)) };
+			if (bulkMode) {
+				setBulkDrafts(d => ({ ...d, [String(selectedShop)]: next }));
+			}
+			return next;
+		});
 	};
 
 	const saveChanges = async () => {
@@ -209,6 +231,132 @@ export default function DailyDistributionsPage() {
 		}
 	};
 
+	const openBulkModal = () => {
+		setShowBulkModal(true);
+		setBulkFromDate('');
+		setBulkToDate(date);
+		setError(null);
+		setSuccess(null);
+	};
+
+	const closeBulkModal = () => {
+		setShowBulkModal(false);
+		setBulkFromDate('');
+	};
+
+	const fetchRulesForShopAndDate = async (shopId, dateStr) => {
+		const res = await fetch(`/api/daily_distributions?shop_id=${shopId}&date=${dateStr}`);
+		if (!res.ok) throw new Error('Failed to load distribution rules');
+		return res.json();
+	};
+
+	const loadBulkShop = async (shopId) => {
+		setDataLoading(true);
+		setError(null);
+		try {
+			// Always load rule metadata (name/category) from the source date
+			const data = await fetchRulesForShopAndDate(shopId, bulkFromDate);
+			setRules(data.rules);
+			setMode('bulk');
+			setDayType(computeDayType(bulkToDate));
+
+			const shopKey = String(shopId);
+			if (bulkDrafts[shopKey]) {
+				setEditingQuantities(bulkDrafts[shopKey]);
+			} else {
+				const copiedQuantities = {};
+				data.rules.forEach(r => {
+					copiedQuantities[r.lottery_id] = r.quantity;
+				});
+				setBulkDrafts(d => ({ ...d, [shopKey]: copiedQuantities }));
+				setEditingQuantities(copiedQuantities);
+			}
+
+			setEditMode(true);
+		} catch (e) {
+			setError(e.message);
+		} finally {
+			setDataLoading(false);
+		}
+	};
+
+	const startBulkCopy = async () => {
+		if (!bulkFromDate || !bulkToDate) {
+			setError('Please select both From Date and To Date');
+			return;
+		}
+		if (!shops || shops.length === 0) {
+			setError('No shops found');
+			return;
+		}
+		setError(null);
+		setSuccess(null);
+		setShowBulkModal(false);
+		setBulkMode(true);
+		setEditModeType('date');
+		setDate(bulkToDate);
+		setBulkIndex(0);
+		setBulkDrafts({});
+		setBulkSaveStatus({});
+
+		const firstShopId = String(shops[0].id);
+		setSelectedShop(firstShopId);
+		await loadBulkShop(firstShopId);
+	};
+
+	const saveShopDateRules = async (shopId, saveDate, quantitiesObj) => {
+		const ruleArray = Object.entries(quantitiesObj).map(([lottery_id, quantity]) => ({
+			lottery_id: Number(lottery_id),
+			quantity: Number(quantity || 0)
+		}));
+		const payload = {
+			shop_id: Number(shopId),
+			date: saveDate,
+			day_type: computeDayType(saveDate),
+			rules: ruleArray
+		};
+		const res = await fetch('/api/daily_distributions', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload)
+		});
+		if (!res.ok) {
+			const errData = await res.json().catch(() => ({ error: 'Save failed' }));
+			throw new Error(errData.error || 'Save failed');
+		}
+		return res.json().catch(() => ({}));
+	};
+
+	const saveCurrentShopInBackground = (shopId) => {
+		const shopKey = String(shopId);
+		const quantitiesObj = bulkDrafts[shopKey] || editingQuantities;
+		setBulkSaveStatus(s => ({ ...s, [shopKey]: { status: 'saving' } }));
+		saveShopDateRules(shopId, bulkToDate, quantitiesObj)
+			.then(() => {
+				setBulkSaveStatus(s => ({ ...s, [shopKey]: { status: 'saved' } }));
+			})
+			.catch((e) => {
+				setBulkSaveStatus(s => ({ ...s, [shopKey]: { status: 'error', message: e.message } }));
+			});
+	};
+
+	const goToBulkIndex = async (nextIndex) => {
+		if (!shops || shops.length === 0) return;
+		const bounded = Math.max(0, Math.min(nextIndex, shops.length - 1));
+		setBulkIndex(bounded);
+		const nextShopId = String(shops[bounded].id);
+		setSelectedShop(nextShopId);
+		setDate(bulkToDate);
+		await loadBulkShop(nextShopId);
+	};
+
+	const saveAndNextShop = async () => {
+		if (!shops || shops.length === 0) return;
+		setBulkDrafts(d => ({ ...d, [String(selectedShop)]: editingQuantities }));
+		saveCurrentShopInBackground(selectedShop);
+		await goToBulkIndex(bulkIndex + 1);
+	};
+
 	// Derived grouping & totals (use edited values if in editMode)
 	const grouped = { NLB: [], DLB: [] };
 	rules.forEach(r => {
@@ -237,6 +385,19 @@ export default function DailyDistributionsPage() {
 	const totalNLB = grouped.NLB.reduce((sum, r) => sum + displayQuantity(r), 0);
 	const totalDLB = grouped.DLB.reduce((sum, r) => sum + displayQuantity(r), 0);
 	const grandTotal = totalNLB + totalDLB;
+	const currentBulkShopKey = String(selectedShop || '');
+	const bulkStatusList = bulkMode
+		? shops.map((shop) => {
+			const sid = String(shop.id);
+			const st = bulkSaveStatus[sid];
+			return {
+				sid,
+				name: shop.name,
+				status: st?.status || 'not-saved',
+				message: st?.message || ''
+			};
+		})
+		: [];
 
 	return (
 		<div className="min-h-screen bg-[#0f111a]">
@@ -311,24 +472,103 @@ export default function DailyDistributionsPage() {
 										Copy from Date
 									</button>
 								)}
+								{editModeType === 'date' && (
+									<button
+										disabled={dataLoading || shops.length === 0}
+										onClick={openBulkModal}
+										className="rounded-xl px-4 py-2 bg-gradient-to-r from-emerald-700 via-emerald-500 to-cyan-500 text-white text-sm font-semibold shadow-lg shadow-emerald-900/30 disabled:opacity-40"
+									>
+										Bulk Copy (All Shops)
+									</button>
+								)}
 							</div>
 						)}
 						{editMode && (
-							<div className="flex gap-2">
-								<button
-									onClick={saveChanges}
-									disabled={saving}
-									className="rounded-xl px-4 py-2 bg-gradient-to-r from-cyan-600 via-blue-500 to-purple-600 text-white text-sm font-semibold shadow-lg shadow-blue-900/30 disabled:opacity-40"
-								>{saving ? 'Saving...' : 'Save'}</button>
-								<button
-									onClick={cancelEdit}
-									disabled={saving}
-									className="rounded-xl px-4 py-2 bg-[#23263a] border border-blue-800/50 text-blue-200 text-sm font-semibold hover:bg-blue-800/50"
-								>Cancel</button>
+							<div className="flex gap-2 flex-wrap justify-end">
+								{bulkMode ? (
+									<>
+										<button
+											onClick={() => goToBulkIndex(bulkIndex - 1)}
+											disabled={bulkIndex === 0 || dataLoading}
+											className="rounded-xl px-4 py-2 bg-[#23263a] border border-blue-800/50 text-blue-200 text-sm font-semibold hover:bg-blue-800/50 disabled:opacity-40"
+										>
+											Prev Shop
+										</button>
+										<button
+											onClick={saveAndNextShop}
+											disabled={dataLoading || bulkIndex >= shops.length - 1}
+											className="rounded-xl px-4 py-2 bg-gradient-to-r from-cyan-600 via-blue-500 to-purple-600 text-white text-sm font-semibold shadow-lg shadow-blue-900/30 disabled:opacity-40"
+										>
+											Save & Next Shop
+										</button>
+										<button
+											onClick={async () => { setBulkDrafts(d => ({ ...d, [String(selectedShop)]: editingQuantities })); await goToBulkIndex(bulkIndex + 1); }}
+											disabled={dataLoading || bulkIndex >= shops.length - 1}
+											className="rounded-xl px-4 py-2 bg-[#23263a] border border-blue-800/50 text-blue-200 text-sm font-semibold hover:bg-blue-800/50 disabled:opacity-40"
+										>
+											Next (No Save)
+										</button>
+										<button
+											onClick={() => { setBulkDrafts(d => ({ ...d, [String(selectedShop)]: editingQuantities })); saveCurrentShopInBackground(selectedShop); }}
+											disabled={dataLoading}
+											className="rounded-xl px-4 py-2 bg-gradient-to-r from-emerald-600 via-emerald-500 to-cyan-500 text-white text-sm font-semibold shadow-lg shadow-emerald-900/30 disabled:opacity-40"
+										>
+											Save This Shop
+										</button>
+										<button
+											onClick={cancelEdit}
+											className="rounded-xl px-4 py-2 bg-[#23263a] border border-blue-800/50 text-blue-200 text-sm font-semibold hover:bg-blue-800/50"
+										>
+											Exit Bulk
+										</button>
+									</>
+								) : (
+									<>
+										<button
+											onClick={saveChanges}
+											disabled={saving}
+											className="rounded-xl px-4 py-2 bg-gradient-to-r from-cyan-600 via-blue-500 to-purple-600 text-white text-sm font-semibold shadow-lg shadow-blue-900/30 disabled:opacity-40"
+										>{saving ? 'Saving...' : 'Save'}</button>
+										<button
+											onClick={cancelEdit}
+											disabled={saving}
+											className="rounded-xl px-4 py-2 bg-[#23263a] border border-blue-800/50 text-blue-200 text-sm font-semibold hover:bg-blue-800/50"
+										>Cancel</button>
+									</>
+								)}
 							</div>
 						)}
 					</div>
 				</div>
+				{bulkMode && shops.length > 0 && (
+					<div className="mb-4 rounded-2xl bg-[#141827] border border-blue-800/40 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+						<div className="text-xs text-blue-200">
+							<span className="font-semibold text-cyan-300">Bulk Copy Mode</span>
+							<span className="mx-2 text-blue-400">•</span>
+							From <span className="font-semibold">{bulkFromDate}</span> to <span className="font-semibold">{bulkToDate}</span>
+							<span className="mx-2 text-blue-400">•</span>
+							Shop {bulkIndex + 1} of {shops.length}: <span className="font-semibold">{shops[bulkIndex]?.name}</span>
+						</div>
+						<div className="text-[11px] text-blue-300 flex flex-wrap gap-2">
+							{bulkStatusList.map((st) => (
+								<span
+									key={st.sid}
+									title={st.message}
+									className={`px-2 py-1 rounded-lg border ${st.status === 'saved'
+										? 'bg-green-900/30 border-green-700/50 text-green-200'
+										: st.status === 'saving'
+											? 'bg-blue-900/30 border-blue-700/50 text-blue-200'
+											: st.status === 'error'
+												? 'bg-red-900/30 border-red-700/50 text-red-200'
+												: 'bg-[#181c2b] border-blue-800/40 text-blue-200'
+									}${st.sid === currentBulkShopKey ? ' ring-1 ring-cyan-400/60' : ''}`}
+								>
+									{st.name}: {st.status}
+								</span>
+							))}
+						</div>
+					</div>
+				)}
 				{/* {editMode && editModeType === 'date' && (
 					<label className="inline-flex items-center space-x-2 text-xs font-semibold text-blue-100 mb-4">
 						<input
@@ -491,6 +731,57 @@ export default function DailyDistributionsPage() {
 					)}
 				</div>
 			</div>
+
+			{/* Bulk Copy Modal */}
+			{showBulkModal && (
+				<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+					<div className="bg-[#181c2b] rounded-2xl border border-blue-800/50 shadow-2xl max-w-lg w-full p-6">
+						<h2 className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mb-4">Bulk Copy (All Shops)</h2>
+						<p className="text-sm text-blue-200 mb-4">
+							Pick a source date (copy from) and target date (save to). You can review/edit each shop, and saves will run in the background while you move to the next shop.
+						</p>
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+							<div>
+								<label className="block text-xs font-semibold text-blue-200 mb-2">From Date</label>
+								<input
+									type="date"
+									value={bulkFromDate}
+									onChange={e => setBulkFromDate(e.target.value)}
+									className="w-full rounded-xl bg-[#23263a] border border-blue-800/50 text-blue-100 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+								/>
+							</div>
+							<div>
+								<label className="block text-xs font-semibold text-blue-200 mb-2">To Date</label>
+								<input
+									type="date"
+									value={bulkToDate}
+									onChange={e => setBulkToDate(e.target.value)}
+									className="w-full rounded-xl bg-[#23263a] border border-blue-800/50 text-blue-100 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+								/>
+							</div>
+						</div>
+						<div className="text-[11px] text-blue-300 mb-4">
+							Nothing is saved until you use “Save This Shop” or “Save & Next Shop”.
+						</div>
+						{error && <div className="mb-3 rounded-xl bg-red-900/40 border border-red-700/50 text-red-200 px-4 py-2 text-sm">{error}</div>}
+						<div className="flex gap-3 justify-end">
+							<button
+								onClick={closeBulkModal}
+								className="rounded-xl px-4 py-2 bg-[#23263a] border border-blue-800/50 text-blue-200 text-sm font-semibold hover:bg-blue-800/50"
+							>
+								Cancel
+							</button>
+							<button
+								onClick={startBulkCopy}
+								disabled={!bulkFromDate || !bulkToDate || shops.length === 0}
+								className="rounded-xl px-4 py-2 bg-gradient-to-r from-emerald-600 via-emerald-500 to-cyan-500 text-white text-sm font-semibold shadow-lg shadow-emerald-900/30 disabled:opacity-40"
+							>
+								Start Bulk Copy
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 
 			{/* Copy from Previous Date Modal */}
 			{showCopyModal && (
