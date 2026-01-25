@@ -36,6 +36,10 @@ export default function DailyDistributionsPage() {
 	// General rules editing state
 	const [editModeType, setEditModeType] = useState('date'); // 'date' | 'general'
 	const [generalDayType, setGeneralDayType] = useState('WEEKDAY');
+	// Copy from previous date state
+	const [showCopyModal, setShowCopyModal] = useState(false);
+	const [copyFromDate, setCopyFromDate] = useState('');
+	const [loadingCopy, setLoadingCopy] = useState(false);
 
 	// Fetch shops on mount
 	useEffect(() => {
@@ -162,6 +166,49 @@ export default function DailyDistributionsPage() {
 		}
 	};
 
+	const openCopyModal = () => {
+		setShowCopyModal(true);
+		setCopyFromDate('');
+		setError(null);
+	};
+
+	const closeCopyModal = () => {
+		setShowCopyModal(false);
+		setCopyFromDate('');
+	};
+
+	const copyFromPreviousDate = async () => {
+		if (!copyFromDate) {
+			setError('Please select a date to copy from');
+			return;
+		}
+		if (!selectedShop) {
+			setError('Please select a shop first');
+			return;
+		}
+		setLoadingCopy(true);
+		setError(null);
+		try {
+			const res = await fetch(`/api/daily_distributions?shop_id=${selectedShop}&date=${copyFromDate}`);
+			if (!res.ok) throw new Error('Failed to load data from selected date');
+			const data = await res.json();
+			
+			// Populate editing quantities with the copied values
+			const copiedQuantities = {};
+			data.rules.forEach(r => {
+				copiedQuantities[r.lottery_id] = r.quantity;
+			});
+			setEditingQuantities(copiedQuantities);
+			setEditMode(true);
+			setShowCopyModal(false);
+			setSuccess(`Values copied from ${copyFromDate}. Review and save to apply to ${date}.`);
+		} catch (e) {
+			setError(e.message);
+		} finally {
+			setLoadingCopy(false);
+		}
+	};
+
 	// Derived grouping & totals (use edited values if in editMode)
 	const grouped = { NLB: [], DLB: [] };
 	rules.forEach(r => {
@@ -247,13 +294,24 @@ export default function DailyDistributionsPage() {
 					</div>
 					<div className="flex flex-col justify-end">
 						{!editMode && (
-							<button
-								disabled={!selectedShop || dataLoading}
-								onClick={beginEdit}
-								className="rounded-xl px-4 py-2 bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-500 text-white text-sm font-semibold shadow-lg shadow-blue-900/30 disabled:opacity-40"
-							>
-								{editModeType === 'general' ? 'Edit General Quantities' : 'Edit Date Quantities'}
-							</button>
+							<div className="flex gap-2">
+								<button
+									disabled={!selectedShop || dataLoading}
+									onClick={beginEdit}
+									className="rounded-xl px-4 py-2 bg-gradient-to-r from-blue-700 via-blue-500 to-cyan-500 text-white text-sm font-semibold shadow-lg shadow-blue-900/30 disabled:opacity-40"
+								>
+									{editModeType === 'general' ? 'Edit General Quantities' : 'Edit Date Quantities'}
+								</button>
+								{editModeType === 'date' && (
+									<button
+										disabled={!selectedShop || dataLoading}
+										onClick={openCopyModal}
+										className="rounded-xl px-4 py-2 bg-gradient-to-r from-purple-700 via-purple-500 to-pink-500 text-white text-sm font-semibold shadow-lg shadow-purple-900/30 disabled:opacity-40"
+									>
+										Copy from Date
+									</button>
+								)}
+							</div>
 						)}
 						{editMode && (
 							<div className="flex gap-2">
@@ -433,6 +491,45 @@ export default function DailyDistributionsPage() {
 					)}
 				</div>
 			</div>
+
+			{/* Copy from Previous Date Modal */}
+			{showCopyModal && (
+				<div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+					<div className="bg-[#181c2b] rounded-2xl border border-blue-800/50 shadow-2xl max-w-md w-full p-6">
+						<h2 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">Copy from Previous Date</h2>
+						<p className="text-sm text-blue-200 mb-4">
+							Select a previous date to copy distribution values from. The values will be loaded into edit mode for the current date ({date}).
+						</p>
+						<div className="mb-4">
+							<label className="block text-xs font-semibold text-blue-200 mb-2">Select Date to Copy From</label>
+							<input
+								type="date"
+								value={copyFromDate}
+								onChange={e => setCopyFromDate(e.target.value)}
+								
+								className="w-full rounded-xl bg-[#23263a] border border-blue-800/50 text-blue-100 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+							/>
+						</div>
+						{error && <div className="mb-3 rounded-xl bg-red-900/40 border border-red-700/50 text-red-200 px-4 py-2 text-sm">{error}</div>}
+						<div className="flex gap-3 justify-end">
+							<button
+								onClick={closeCopyModal}
+								disabled={loadingCopy}
+								className="rounded-xl px-4 py-2 bg-[#23263a] border border-blue-800/50 text-blue-200 text-sm font-semibold hover:bg-blue-800/50 disabled:opacity-40"
+							>
+								Cancel
+							</button>
+							<button
+								onClick={copyFromPreviousDate}
+								disabled={loadingCopy || !copyFromDate}
+								className="rounded-xl px-4 py-2 bg-gradient-to-r from-purple-600 via-purple-500 to-pink-500 text-white text-sm font-semibold shadow-lg shadow-purple-900/30 disabled:opacity-40"
+							>
+								{loadingCopy ? 'Loading...' : 'Load Values'}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 			</main>
 		</div>
 	);
