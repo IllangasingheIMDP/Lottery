@@ -48,22 +48,49 @@ export default function Orders() {
     const [originalDates, setOriginalDates] = useState(initialDates);
     const [originalDailyOrders, setOriginalDailyOrders] = useState({});
 
+    const applyOrderingNotes = (notes) => {
+        const unreadNotes = (notes || []).filter(note => !note.is_read);
+        setOrderingNotes(unreadNotes);
+    };
+
+    const fetchOrdersBundle = async (newDates) => {
+        const validDates = newDates.filter(date => date !== '');
+        if (validDates.length === 0) return null;
+
+        try {
+            const response = await fetch(`/api/orders_bundle?dates=${validDates.join(',')}`);
+            if (!response.ok) {
+                console.error('Error fetching orders bundle:', response.statusText);
+                return null;
+            }
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching orders bundle:', error);
+            return null;
+        }
+    };
+
     // Fetch initial data on mount
     useEffect(() => {
         const fetchInitialData = async () => {
             setLoading(true);
             try {
-                const [lotteryTypesRes, defaultQuantitiesRes, shopsRes] = await Promise.all([
-                    fetch('/api/lottery_types').then(res => res.json()),
-                    fetch('/api/default_quantities').then(res => res.json()),
-                    fetch('/api/shops').then(res => res.json()),
-                ]);
-                
-                setLotteryTypes(lotteryTypesRes);
-                setDefaultQuantities(defaultQuantitiesRes);
-                setShops(shopsRes);
-    
-                await fetchDailyOrders(initialDates, lotteryTypesRes, defaultQuantitiesRes);
+                const bundle = await fetchOrdersBundle(initialDates);
+                if (!bundle) return;
+
+                setLotteryTypes(bundle.lotteryTypes || []);
+                setDefaultQuantities(bundle.defaultQuantities || {});
+                setShops(bundle.shops || []);
+
+                await fetchDailyOrders(
+                    initialDates,
+                    bundle.lotteryTypes || [],
+                    bundle.defaultQuantities || {},
+                    {
+                        distributionTotals: bundle.distributionTotals,
+                        orderingNotes: bundle.orderingNotes,
+                    }
+                );
             } catch (error) {
                 console.error('Error fetching initial data:', error);
             } finally {
@@ -114,7 +141,8 @@ export default function Orders() {
     };
 
     // Build daily orders purely from distribution totals (no existing orders lookup)
-    const fetchDailyOrders = async (newDates, lotteryTypesData, defaultQuantitiesData) => {
+    const fetchDailyOrders = async (newDates, lotteryTypesData, defaultQuantitiesData, options = {}) => {
+        const { distributionTotals, orderingNotes: preloadedNotes } = options;
         const validDates = newDates.filter(date => date !== '');
         if (validDates.length === 0) return;
 
@@ -133,7 +161,7 @@ export default function Orders() {
             });
 
             // Overlay distribution totals
-            const distTotalsRes = await fetch(`/api/distribution_totals?dates=${validDates.join(',')}`).then(r => r.ok ? r.json() : null);
+            const distTotalsRes = distributionTotals || await fetch(`/api/distribution_totals?dates=${validDates.join(',')}`).then(r => r.ok ? r.json() : null);
             console.log('Distribution Totals Response:', distTotalsRes);
             if (distTotalsRes && distTotalsRes.dates) {
                 validDates.forEach(date => {
@@ -152,7 +180,11 @@ export default function Orders() {
             setOriginalDailyOrders(JSON.parse(JSON.stringify(initialDailyOrders)));
 
             // Fetch ordering notes for these dates
-            await fetchOrderingNotes(validDates);
+            if (preloadedNotes) {
+                applyOrderingNotes(preloadedNotes);
+            } else {
+                await fetchOrderingNotes(validDates);
+            }
         } catch (error) {
             console.error('Error building orders from distribution totals:', error);
         } finally {
@@ -172,9 +204,7 @@ export default function Orders() {
             
             if (response.ok) {
                 const notes = await response.json();
-                // Filter for unread notes only
-                const unreadNotes = notes.filter(note => !note.is_read);
-                setOrderingNotes(unreadNotes);
+                applyOrderingNotes(notes);
             }
         } catch (error) {
             console.error('Error fetching ordering notes:', error);
@@ -215,7 +245,7 @@ export default function Orders() {
     };
 
     // Handle date change for Day 1 (auto-sets Days 2 and 3)
-    const handleDateChange = (index, value) => {
+    const handleDateChange = async (index, value) => {
         const newDates = [...dates];
         newDates[index] = value;
         if (index === 0 && value) {
@@ -227,8 +257,19 @@ export default function Orders() {
         
         // Clear existing notes when dates change
         setOrderingNotes([]);
-        
-        fetchDailyOrders(newDates, lotteryTypes, defaultQuantities);
+
+        const bundle = await fetchOrdersBundle(newDates);
+        if (bundle) {
+            if (bundle.lotteryTypes) setLotteryTypes(bundle.lotteryTypes);
+            if (bundle.defaultQuantities) setDefaultQuantities(bundle.defaultQuantities);
+            if (bundle.shops) setShops(bundle.shops);
+            await fetchDailyOrders(newDates, bundle.lotteryTypes || lotteryTypes, bundle.defaultQuantities || defaultQuantities, {
+                distributionTotals: bundle.distributionTotals,
+                orderingNotes: bundle.orderingNotes,
+            });
+        } else {
+            fetchDailyOrders(newDates, lotteryTypes, defaultQuantities);
+        }
     };
 
     // Toggle edit mode
