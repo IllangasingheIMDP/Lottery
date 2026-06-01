@@ -1,5 +1,6 @@
 import db from '@/lib/db';
 import { authenticate } from '@/lib/auth';
+import redis from '@/lib/redis';
 
 export async function POST(req) {
   const auth = authenticate(req,['samarakoonkumara@gmail.com']);
@@ -17,6 +18,10 @@ export async function POST(req) {
       'INSERT INTO shops (name, contact_number, address, active) VALUES (?, ?, ?, TRUE)',
       [name, contact_number, address]
     );
+
+    // Invalidate caches
+    await redis.del(['cache:shops:active', 'cache:shops:all']);
+
     return new Response(
       JSON.stringify({ message: 'Shop added successfully' }),
       { status: 201 }

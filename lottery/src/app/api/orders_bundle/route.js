@@ -1,5 +1,6 @@
 import db from '@/lib/db';
 import { authenticate } from '@/lib/auth';
+import redis from '@/lib/redis';
 
 // Parse YYYY-MM-DD as a local date to avoid UTC skew
 function parseLocalYMD(dateStr) {
@@ -40,27 +41,48 @@ export async function GET(req) {
   try {
     conn = await db.getConnection();
 
-    const [lotteryTypes] = await conn.query(
-      'SELECT id, name, category FROM lottery_types ORDER BY name'
-    );
+    // Check Redis for Lottery Types
+    let lotteryTypes = await redis.get('cache:lottery_types');
+    if (lotteryTypes) {
+      lotteryTypes = JSON.parse(lotteryTypes);
+    } else {
+      [lotteryTypes] = await conn.query('SELECT id, name, category FROM lottery_types ORDER BY name');
+      await redis.set('cache:lottery_types', JSON.stringify(lotteryTypes), { EX: 86400 });
+    }
 
-    const [defaultRows] = await conn.query(`
-      SELECT lottery_type_id, SUM(quantity) as default_quantity
-      FROM orders
-      GROUP BY lottery_type_id
-    `);
-    const defaultQuantities = {};
-    defaultRows.forEach(row => {
-      defaultQuantities[row.lottery_type_id] = row.default_quantity || 0;
-    });
+    // Check Redis for Default Quantities
+    let defaultQuantities = await redis.get('cache:default_quantities');
+    if (defaultQuantities) {
+      defaultQuantities = JSON.parse(defaultQuantities);
+    } else {
+      const [defaultRows] = await conn.query(`
+        SELECT lottery_type_id, SUM(quantity) as default_quantity
+        FROM orders
+        GROUP BY lottery_type_id
+      `);
+      defaultQuantities = {};
+      defaultRows.forEach(row => {
+        defaultQuantities[row.lottery_type_id] = row.default_quantity || 0;
+      });
+      await redis.set('cache:default_quantities', JSON.stringify(defaultQuantities), { EX: 3600 });
+    }
 
-    const shopQuery = includeInactive
-      ? 'SELECT * FROM shops'
-      : 'SELECT * FROM shops WHERE active = TRUE';
-    const [shops] = await conn.query(shopQuery);
+    // Check Redis for Shops
+    const shopCacheKey = includeInactive ? 'cache:shops:all' : 'cache:shops:active';
+    let shops = await redis.get(shopCacheKey);
+    if (shops) {
+      shops = JSON.parse(shops);
+    } else {
+      const shopQuery = includeInactive
+        ? 'SELECT * FROM shops'
+        : 'SELECT * FROM shops WHERE active = TRUE';
+      [shops] = await conn.query(shopQuery);
+      await redis.set(shopCacheKey, JSON.stringify(shops), { EX: 86400 });
+    }
 
-    const [activeShops] = await conn.query('SELECT id FROM shops WHERE active = 1');
-    const activeShopIds = activeShops.map(s => s.id);
+    // To compute distribution logic, we need active shops IDs.
+    // If we included inactive shops, filter for active ones. If not, map all.
+    const activeShopIds = shops.filter(s => s.active || s.active === 1).map(s => s.id);
 
     const [dateSpecificRows] = await conn.query(`
       SELECT shop_id, lottery_id, quantity, DATE_FORMAT(date, '%Y-%m-%d') AS date
