@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect,useRef } from 'react';
 import Header from '@/components/navbar';
+import html2canvas from 'html2canvas-pro'; // Added html2canvas
 // Helper function to get the next two dates after a given date
 function getNextTwoDates(startDate) {
     const dates = [];
@@ -29,7 +30,7 @@ export default function Orders() {
     const [orderingNotes, setOrderingNotes] = useState([]);
     const [notesLoading, setNotesLoading] = useState(false);
     const [shops, setShops] = useState([]);
-
+    const tablesRef = useRef(null);
     // Set initial dates: today, tomorrow, and the day after tomorrow
     const today = new Date();
     const tomorrow = new Date(today);
@@ -71,6 +72,46 @@ export default function Orders() {
         };
         fetchInitialData();
     }, []);
+
+    // Capture tables and share/download
+    const handleShare = async () => {
+        if (!tablesRef.current) return;
+
+        try {
+            // 1. Capture the DOM element
+            const canvas = await html2canvas(tablesRef.current, {
+                backgroundColor: '#ffffff', // Ensure white background for JPG
+                scale: 2, // Higher resolution
+            });
+
+            // 2. Convert to JPG data URL
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+            // 3. Convert Data URL to a File object for the Web Share API
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], 'lottery-orders.jpg', { type: 'image/jpeg' });
+
+            // 4. Check if the device supports native file sharing (Mobile)
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: 'Lottery Orders',
+                    text: 'Here are the daily orders.',
+                    files: [file],
+                });
+            } else {
+                // 5. Fallback for Desktop: Download the image
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'lottery-orders.jpg';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        } catch (error) {
+            console.error('Error sharing image:', error);
+            alert('Failed to capture and share the tables.');
+        }
+    };
 
     // Build daily orders purely from distribution totals (no existing orders lookup)
     const fetchDailyOrders = async (newDates, lotteryTypesData, defaultQuantitiesData) => {
@@ -336,7 +377,17 @@ export default function Orders() {
             <div className="bg-white rounded-lg shadow-lg p-6">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-bold text-gray-800">Orders for Next Three Days</h1>
-                    <div>
+                    <div className="flex items-center space-x-3" >
+                        {/* --- NEW SHARE BUTTON --- */}
+                            <button 
+                                onClick={handleShare}
+                                className="bg-purple-500 hover:bg-purple-600 text-white p-2 rounded transition-colors flex items-center justify-center"
+                                title="Share or Download Tables"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                </svg>
+                            </button>
                         {!isEditing ? (
                             <button 
                                 onClick={handleEdit} 
@@ -422,7 +473,9 @@ export default function Orders() {
                         )}
                         
                         {/* Ordering Tables */}
-                        <div className="flex flex-wrap -mx-2">
+                        <div 
+                        ref={tablesRef}
+                        className="flex flex-wrap -mx-2">
                             {renderTable('NLB')}
                             {renderTable('DLB')}
                         </div>
