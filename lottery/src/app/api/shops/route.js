@@ -1,5 +1,6 @@
 import db from '@/lib/db';
 import { authenticate } from '@/lib/auth';
+import redis from '@/lib/redis';
 
 export async function GET(req) {
   const auth = authenticate(req,['samarakoonkumara@gmail.com']);
@@ -15,12 +16,30 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
+    const cacheKey = includeInactive ? 'cache:shops:all' : 'cache:shops:active';
+    const cachedShops = await redis.get(cacheKey);
+
+    if (cachedShops) {
+      return new Response(cachedShops, {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
     const query = includeInactive 
       ? 'SELECT * FROM shops'
       : 'SELECT * FROM shops WHERE active = TRUE';
 
     const [shops] = await db.query(query);
-    return new Response(JSON.stringify(shops), { status: 200 });
+    const shopsJson = JSON.stringify(shops);
+
+    // Cache for 24 hours (86400 seconds)
+    await redis.set(cacheKey, shopsJson, { EX: 86400 });
+
+    return new Response(shopsJson, { 
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (error) {
     console.error('GET /api/shops error:', error);
     return new Response(
@@ -43,6 +62,10 @@ export async function DELETE(req) {
     const { id } = await req.json();
     // Instead of deleting, update the active status
     await db.query('UPDATE shops SET active = FALSE WHERE id = ?', [id]);
+
+    // Invalidate caches
+    await redis.del(['cache:shops:active', 'cache:shops:all']);
+
     return new Response(
       JSON.stringify({ message: 'Shop deactivated successfully' }), 
       { status: 200 }
@@ -69,6 +92,10 @@ export async function PATCH(req) {
   try {
     const { id, active } = await req.json();
     await db.query('UPDATE shops SET active = ? WHERE id = ?', [active, id]);
+    
+    // Invalidate caches
+    await redis.del(['cache:shops:active', 'cache:shops:all']);
+
     return new Response(
       JSON.stringify({ 
         message: active ? 'Shop activated successfully' : 'Shop deactivated successfully' 
@@ -114,6 +141,9 @@ export async function PUT(req) {
        WHERE id = ?`,
       [name ?? null, contact_number ?? null, address ?? null, id]
     );
+
+    // Invalidate caches
+    await redis.del(['cache:shops:active', 'cache:shops:all']);
 
     return new Response(
       JSON.stringify({ message: 'Shop updated successfully' }),

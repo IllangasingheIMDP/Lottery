@@ -1,5 +1,6 @@
 import db from '@/lib/db';
 import { authenticate } from '@/lib/auth';
+import redis from '@/lib/redis';
 
 export async function GET(req) {
   const auth = authenticate(req,['samarakoonkumara@gmail.com']);
@@ -47,6 +48,10 @@ export async function POST(req) {
     );
 
     await conn.commit();
+
+    // Invalidate default quantities cache since they are aggregates of orders
+    await redis.del('cache:default_quantities');
+
     return new Response(JSON.stringify({ message: 'Orders updated' }), { status: 200 });
   } catch (error) {
     if (conn) {
