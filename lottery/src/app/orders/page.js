@@ -345,7 +345,9 @@ export default function Orders() {
 
     // Render table for a category (NLB or DLB)
     const renderTable = (category) => {
-        const filteredLotteries = lotteryTypes.filter(lt => lt.category === category);
+        const filteredLotteries = lotteryTypes
+            .filter(lt => lt.category === category)
+            .sort((a, b) => a.id - b.id);
         const bgColor = category === 'NLB' ? 'bg-amber-100' : 'bg-red-100';
         const headerBg = category === 'NLB' ? 'bg-amber-200' : 'bg-red-200';
         
